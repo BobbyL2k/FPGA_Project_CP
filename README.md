@@ -7,6 +7,7 @@ Final Project writen mostly in Verilog
 * Anuruth Lertpiya (BobbyL2k)
 * Jirapat Atiwattanachai
 * Trairat Punya
+* Peeranut Jariyarakvarakul
 
 ## License
 
