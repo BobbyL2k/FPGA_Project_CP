@@ -2,3 +2,4 @@
 *.vcd
 module/uart/run
 test.sh
+.vscode/
