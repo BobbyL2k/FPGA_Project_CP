@@ -5,7 +5,7 @@ Final Project writen mostly in Verilog
 ## Author
 
 * Anuruth Lertpiya (BobbyL2k)
-* Jirapat Atiwattanachai
+* Jirapat Atiwattanachai (ลิง)
 * Trairat Punya
 * Peeranut Jariyarakvarakul
 
