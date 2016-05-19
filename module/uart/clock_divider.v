@@ -4,10 +4,10 @@ module clock_divider(
   input wire reset
 );
 
-parameter IN_FREQ = 10;
+parameter IN_FREQ = 20;
 parameter OUT_FREQ = 1;
 
-parameter COUNT_TO = IN_FREQ / OUT_FREQ / 4;
+parameter COUNT_TO = IN_FREQ / OUT_FREQ / 2 - 1;
 parameter COUNTER_SIZE = $clog2(COUNT_TO)+1;
 
 reg [COUNTER_SIZE-1:0] counter;
