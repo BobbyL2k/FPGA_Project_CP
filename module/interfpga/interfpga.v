@@ -42,7 +42,7 @@ end
 // next state (n_state) block
 // calculate the next state (sequential logic)
 // if the current state is in sSend the and until overflow to sWait
-// if recived send signal then go to sSend
+// if received send signal then go to sSend
 // else stay at sWait
 always @( * ) begin
   if( c_state[2] == 1 ) begin
@@ -67,20 +67,20 @@ end
 endmodule // interfpga_send
 
 
-// module for reciving signal from another FPGA
+// module for receiving signal from another FPGA
 module interfpga_receive(
-  output wire [7:0] data,   // Outputs data recived 
-  output wire ready,        // Indicate that the data recived is 
+  output wire [7:0] data,   // Outputs data received 
+  output wire ready,        // Indicate that the data received is 
                             // ready to be read - active high
   input wire reset_ready,   // resets the ready signal - active high
-  input wire [3:0] data_i,  // lines used to recive data 
-  input wire ctrl_i,        // line used to recive control signal
+  input wire [3:0] data_i,  // lines used to receive data 
+  input wire ctrl_i,        // line used to receive control signal
   input wire reset,         // reset - active high
   input wire clk            // clock, this module uses positive edge
                             // to update it's FF
 );
 
-reg [7:0] buffer [1:0];     // buffer for stroing data recived
+reg [7:0] buffer [1:0];     // buffer for stroing data received
                             // this module uses double buffering
 reg c_buffer_select, n_buffer_select;
                             // buffer selector state
@@ -93,10 +93,10 @@ assign data = buffer[c_buffer_select];
 // state of this module contains the following
 parameter sWait      = 3'b000;
                             // indicates that the module is waiting to
-                            // recive data
+                            // receive data
 parameter sReceiving = 3'b100;
-                            // indicates that the module is reciving data
-                            // has 4 sub states (to recive 8 bits, 4x2)
+                            // indicates that the module is receiving data
+                            // has 4 sub states (to receive 8 bits, 4x2)
                             // 100, 101, 110, 111
                             // the same data is held for 2 clocks
                             // ex. 100 and 101 has the same data
@@ -141,7 +141,7 @@ end
 // next state (n_state) block
 // calculate the next state (sequential logic)
 // if the current state is in sReceiving the and until overflow to sWait
-// if recived send signal then go to sReceiving
+// if received send signal then go to sReceiving
 // else stay at sWait
 always @( * ) begin
   if( c_state[2] == 1 ) begin
