@@ -9,10 +9,19 @@ module DeserializerWithCounter(
     );
 
     parameter DATA_LENGTH = 16; // length of serial input
-    parameter DATA_COUNTER_SIZE = $clog2(DATA_LENGTH)+1;
+    parameter DATA_COUNTER_SIZE = clog2(DATA_LENGTH)+1;
     parameter WORD_SIZE = 8;    // size of data_out and RCO will assert 1 at the end of word
-    parameter WORD_COUNTER_SIZE = $clog2(WORD_SIZE)+1;
+    parameter WORD_COUNTER_SIZE = clog2(WORD_SIZE)+1;
     parameter START_BIT = 1'b0;
+	 
+		function integer clog2;
+		input integer value;
+		begin 
+		value = value-1;
+		for (clog2=0; value>0; clog2=clog2+1)
+		value = value>>1;
+		end 
+		endfunction
 
     input wire data_in;
     input wire clock;
