@@ -33,7 +33,7 @@ module DeserializerWithCounter_tb();
         #20 data_in = 1;
         #20 data_in = 0;
         #20 data_in = 1;
-        #20 data_in = 0;
+        #20 data_in = 0;//01010001 51
         #20 data_in = 1;
         #20 data_in = 0;
         #20 data_in = 0;
@@ -41,7 +41,7 @@ module DeserializerWithCounter_tb();
         #20 data_in = 1;
         #20 data_in = 1;
         #20 data_in = 0;
-        #20 data_in = 1;
+        #20 data_in = 1;//10110001 B1
         #200 $finish;
     end
 

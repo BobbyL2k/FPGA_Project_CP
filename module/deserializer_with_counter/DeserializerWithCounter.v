@@ -39,7 +39,7 @@ module DeserializerWithCounter(
 
     assign added_word_counter = counter + 1;
     assign added_data_counter = data_counter + 1;
-    assign next_counter = (ps == 2 && !lastBitInWord) ? added_word_counter : {WORD_COUNTER_SIZE{1'b0}};
+    assign next_counter = (ps == 2 && !lastBitInWord) ? added_word_counter : (ps == 2) ? {{WORD_COUNTER_SIZE-1{1'b0}},{1'b1}} : {WORD_COUNTER_SIZE{1'b0}};
     assign next_data_counter = (ps == 2) ? added_data_counter : {DATA_COUNTER_SIZE{1'b0}};
     assign next_data = (ps == 2) ? {data_in,data[WORD_SIZE-1 : 1]} : {WORD_SIZE{1'b0}};
     assign lastBitInWord = (counter == WORD_SIZE) ? 1'b1 : 1'b0;
