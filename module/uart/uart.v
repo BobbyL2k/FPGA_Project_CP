@@ -13,8 +13,8 @@ module uart_receive(
   parameter rx_start_bit = 1'b0;
   parameter rx_stop_bit  = 1'b1;
 
-  // leave tx at low (0)
-  assign tx_o = 1'b0;
+  // leave tx at high (1)
+  assign tx_o = 1'b1;
 
   // Module States
   parameter sActiveCheck = 1'b0;
