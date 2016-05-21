@@ -127,11 +127,11 @@ module SDReader(
 //----------------------------------------------------------
 
 //---------------------- Call Module -----------------------
-	clock_divider #(.IN_FREQ(250),.OUT_FREQ(2))clkdiv(clock,d_clock,reset);
-	serializer #(.DATA_WIDTH(48)) sendcmd(sendcmd_busy,sendcmd_data_out,sendcmd_data_in,sendcmd_start,d_clock,reset);
-	Waiter #(.COUNTER_SIZE(8)) waiter(waiter_busy,waiter_start,waiter_count_to,d_clock,reset);
-	DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,deseres_data_in,d_clock,reset); //Deserializer for response1
-	DeserializerWithCounter #(.DATA_LENGTH(4096),.WORD_SIZE(8)) desedata(desedata_data_out,desedata_busy,desedata_RCO,desedata_start,desedata_data_in,d_clock,reset); //Deserializer for data block
+	clock_divider #(.IN_FREQ(250),.OUT_FREQ(2))clkdiv(clock,d_clock,reset_PB_down);
+	serializer #(.DATA_WIDTH(48)) sendcmd(sendcmd_busy,sendcmd_data_out,sendcmd_data_in,sendcmd_start,d_clock,reset_PB_down);
+	Waiter #(.COUNTER_SIZE(8)) waiter(waiter_busy,waiter_start,waiter_count_to,d_clock,reset_PB_down);
+	DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,deseres_data_in,d_clock,reset_PB_down); //Deserializer for response1
+	DeserializerWithCounter #(.DATA_LENGTH(4096),.WORD_SIZE(8)) desedata(desedata_data_out,desedata_busy,desedata_RCO,desedata_start,desedata_data_in,d_clock,reset_PB_down); //Deserializer for data block
 	
 	PushButton_Debouncer Debouncer(d_clock,start,start_PB_state,start_PB_down,start_PB_up);
 	PushButton_Debouncer Debouncer2(d_clock,reset,reset_PB_state,reset_PB_down,reset_PB_up);
