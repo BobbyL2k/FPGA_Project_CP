@@ -120,7 +120,7 @@ module SDReader(
 	assign fifo_push = desedata_RCO;
 	
 	//LED
-	assign LED = {3'b000,ps};
+	assign LED = {desedata_busy,waiter_busy,1'b0,ps};
 	
 	assign num_DataPacket = 16'b0000_0000_0000_1000; // round = Mbyte(from DPSwitch) / 512 Byte //8
 	//assign num_data = 24'b0100_0000_0000_0000;// 0 to 512 * 8 =  4096
@@ -153,8 +153,8 @@ module SDReader(
 	end
 	
 	
-	always @ (posedge clock or posedge reset) begin
-		if(reset) ps <= 0;
+	always @ (posedge clock or posedge reset_PB_down) begin
+		if(reset_PB_down) ps <= 0;
 		else ps <= ns;
 	end
 
@@ -171,7 +171,7 @@ module SDReader(
 				deseres_start <= 1'b0;
 				desedata_start <= 1'b0;
 			//-----------------------------------
-				if(start) ns <= sSET_SPI_MODE;
+				if(start_PB_down) ns <= sSET_SPI_MODE;
 				else ns <= ps;			
 			end
 			sSET_SPI_MODE : begin
@@ -217,7 +217,7 @@ module SDReader(
 			end
 			sCHECK : begin
 				
-				if(count_DataPacket == num_DataPacket) ns <= sIDLE;
+				if(count_DataPacket == num_DataPacket) ns <= sFINAL;//ns <= sIDLE;
 				else ns <= sSEND_CMD17;
 			end
 			sSEND_CMD17 : begin
@@ -268,7 +268,8 @@ module SDReader(
 				end
 			end
 			sFINAL : begin
-				ns <= sIDLE;
+				//ns <= sIDLE;
+				ns <= sFINAL;
 			end
 			default : begin
 				ns <= sIDLE;
