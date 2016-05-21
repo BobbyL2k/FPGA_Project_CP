@@ -27,9 +27,13 @@ module uart_receive(
   wire [8:0]data_wP;
 
   assign data = data_wP[7:0];
+  
+  wire l_ready_reset;
 
-  always @( posedge clk or reset or reset_ready ) begin
-    if( reset || reset_ready ) begin
+  assign l_ready_reset = reset | reset_ready;
+
+  always @( posedge clk or posedge l_ready_reset ) begin
+    if( l_ready_reset ) begin
       ready = 0;
     end else begin
       if( collectDone ) begin
@@ -40,7 +44,7 @@ module uart_receive(
     end 
   end
   
-  always @( posedge clk or reset ) begin
+  always @( posedge clk or posedge reset ) begin
     if( reset ) begin
       c_state = sActiveCheck;
     end else begin
@@ -89,15 +93,21 @@ module uart_receive(
 endmodule // uart_receive
 
 module uart_receive_helper(
-  input wire rx_i,
-  // output wire tx_o,
-  input wire reset,
-  input wire d_clk,
-  output wire [number_of_bits-1:0] data,
-  output reg done
+  rx_i,
+  reset,
+  d_clk,
+  data,
+  done
 );
 
   parameter number_of_bits = 8+1;
+  
+  input wire rx_i;
+  // output wire tx_o;
+  input wire reset;
+  input wire d_clk;
+  output [number_of_bits-1:0] data;
+  output reg done;
 
   // Module states
   parameter sIdle = 5'b11110;  // idle      state 11_000
@@ -113,7 +123,7 @@ module uart_receive_helper(
 
   reg [4:0] c_state, n_state;
 
-  always @( posedge d_clk or reset ) begin
+  always @( posedge d_clk or posedge reset ) begin
     if(reset) begin
       buffer = {number_of_bits{1'b0}};
     end else begin
@@ -140,7 +150,7 @@ module uart_receive_helper(
     end
   end
 
-  always @( posedge d_clk or reset ) begin
+  always @( posedge d_clk or posedge reset ) begin
     if( reset ) begin
       done = 0;
     end else begin
@@ -157,16 +167,24 @@ endmodule // uart_receive_helper
 `include "../serializer/serializer.v"
 
 module uart_transmitter(
-  input wire [number_of_bits-1:0] data,
-  output wire busy,
-  input wire send,
-  input wire rx_i,
-  output wire tx_o,
-  input wire reset,
-  input wire clk
+	data,
+	busy,
+	send,
+	rx_i,
+	tx_o,
+	reset,
+	clk
 );
 
   parameter number_of_bits = 9;
+  
+  input wire [number_of_bits-1:0] data;
+  output wire busy;
+  input wire send;
+  input wire rx_i;
+  output wire tx_o;
+  input wire reset;
+  input wire clk;
   
   parameter sInit = 2'b10;
   parameter sActiveCheck = 2'b00;
