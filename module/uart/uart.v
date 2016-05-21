@@ -94,7 +94,6 @@ module uart_receive_helper(
   input wire reset,
   input wire d_clk,
   output wire [number_of_bits-1:0] data,
-  // data,
   output reg done
 );
 
@@ -155,6 +154,8 @@ module uart_receive_helper(
 
 endmodule // uart_receive_helper
 
+`include "../serializer/serializer.v"
+
 module uart_transmitter(
   input wire [number_of_bits-1:0] data,
   output wire busy,
@@ -165,24 +166,122 @@ module uart_transmitter(
   input wire clk
 );
 
-  parameter number_of_bits = 8+1;
-
-  parameter sIdle   = 4'b1111;
-  parameter sStart  = 4'b0000;
-  parameter sData   = 4'b0001;
-  parameter sEnd    = sData + number_of_bits;
-                  //= 4'b0110
-
-  reg [3:0] c_state, n_state;
+  parameter sActiveCheck = 1'b0;
+  parameter sSend = 1'b1;
   
-  always @( clk ) begin
-    
+  reg c_state, n_state;
+  
+  wire busy, data_o, d_clk;
+  reg start, reset_d_clk;
+  
+  always @( posedge clk or posedge reset ) begin
+    if( reset ) begin
+      c_state = sActiveCheck;
+    end else begin
+      c_state = n_state;
+    end
   end
-
+  
+  always @( * ) begin
+    if( c_state == sActiveCheck ) begin
+      if( send ) begin
+        n_state = sSend;
+      end else begin
+        n_state = sActiveCheck;
+      end
+    end else begin
+      if( busy ) begin
+        n_state = sSend;
+      end else begin
+        n_state = sActiveCheck;    
+      end
+    end
+  end
+  
+  always @( posedge clk ) begin
+    if( c_state == sActiveCheck && n_state == sSend ) begin
+      start = 1;
+    end else begin
+      start = 0;
+    end
+  end
+  
+  always @( posedge clk ) begin
+    if( c_state == sSend && n_state == sActiveCheck ) begin
+      reset_d_clk = 1;
+    end else begin
+      reset_d_clk = 0;
+    end
+  end
+  
+  serializer #(
+    .DATA_WIDTH(8)) ser(
+    .busy(busy),
+    .data_out,
+    .data_in,
+    .start(start),
+    .clock(d_clk),
+    .reset(reset)
+  );
+  
   clock_divider cd(
     .clock(clk),
     .d_clock(d_clk),
-    .reset(send)
+    .reset(reset_d_clk)
   );
 
 endmodule // uart_transmitter
+
+// module uart_transmitter_helper(
+//   input wire [number_of_bits-1:0] data,
+//   output wire busy,
+//   input wire send,
+//   input wire rx_i,
+//   output wire tx_o,
+//   input wire reset,
+//   input wire clk
+// );
+
+//   parameter number_of_bits = 8+1;
+
+//   parameter sIdle   = 4'b1110;
+//   parameter sStart  = 4'b1111;
+//   parameter sData   = 4'b0000;
+//   parameter sEnd    = sData + number_of_bits;
+//                  // = 4'b0101
+
+//   reg [3:0] c_state, n_state;
+  
+//   always @( posedge clk or reset ) begin
+//     if( reset ) begin
+//       c_state = sIdle;
+//     end else begin
+//       c_state = n_state;
+//     end
+//   end
+  
+//   always @( * ) begin
+//     if( c_state == sIdle ) begin
+//       if( send == 1 ) begin
+//         n_state = sStart;
+//       end else begin
+//         n_state = sIdle;
+//       end
+//     end else if( c_state == sEnd ) begin
+//       n_state = sIdle;
+//     end else begin
+//       n_state = c_state + 1;
+//     end
+//   end
+  
+//   always @( posedge clk or reset ) begin
+//     if( c_state == sIdle )
+//   end
+
+//   // clock_divider cd(
+//   //   .clock(clk),
+//   //   .d_clock(d_clk),
+//   //   .reset(send)
+//   // );
+
+// endmodule // uart_transmitter_helper
