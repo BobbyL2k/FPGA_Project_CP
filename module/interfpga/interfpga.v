@@ -31,7 +31,7 @@ assign ctrl_o = c_state[2]; // while sending the control line is high
 
 // current state (c_state) block
 // assign the next state (n_state) to the current state
-always @( posedge clk or reset ) begin
+always @( posedge clk or posedge reset ) begin
   if(reset) begin
     c_state = sWait;
   end else begin
@@ -117,24 +117,24 @@ reg c_ready, n_ready;       // data ready state
 
 assign ready = c_ready;     // send ready signal when in
                             // ready state
-                            
-// current state (c_state) block
-// assign the next state (n_state) to the current state
-always @( posedge clk or reset ) begin
-  if(reset) begin
-    c_state = sWait;
-  end else begin
-    c_state = n_state;
-  end 
-end
 
 // Module prev-main state
 // assign the last c_state[2] to p_state_2
-always @( posedge clk or reset ) begin
+always @( posedge clk or posedge reset ) begin
   if(reset) begin
     p_state_2 = sWait;
   end else begin
     p_state_2 = c_state[2];
+  end 
+end
+                            
+// current state (c_state) block
+// assign the next state (n_state) to the current state
+always @( posedge clk or posedge reset ) begin
+  if(reset) begin
+    c_state = sWait;
+  end else begin
+    c_state = n_state;
   end 
 end
 
@@ -153,16 +153,20 @@ always @( * ) begin
   end 
 end
 
+wire l_reset_ready;
+
+assign l_reset_ready = reset_ready | reset;
+
 // Ready status state
-always @( posedge clk or reset_ready or reset ) begin
-  if( reset_ready || reset ) begin
+always @( posedge clk or posedge l_reset_ready ) begin
+  if( l_reset_ready ) begin
     c_ready = sNotReady;
   end else begin
     c_ready = n_ready;
   end
 end
 
-always @( * ) begin
+always @( c_state or p_state_2 or c_ready ) begin
   if( c_state[2] == 0 && p_state_2 == 1 ) begin
     n_ready = sReady;
   end else begin
@@ -171,7 +175,7 @@ always @( * ) begin
 end
 
 // Buffer Selector state
-always @( posedge clk or reset ) begin
+always @( posedge clk or posedge reset ) begin
   if( reset ) begin
     c_buffer_select = 0;
   end else begin
@@ -188,7 +192,7 @@ always @( * ) begin
 end
 
 // Buffer writing
-always @( posedge clk or reset ) begin
+always @( posedge clk or posedge reset ) begin
   if( reset ) begin
     buffer[0] <= 8'h00;
     buffer[1] <= 8'h00;

@@ -115,7 +115,7 @@ end
     .data(data_in),
     .busy(busy),
     .send(send),
-    .rx_i(rx_i),
+    // .rx_i(rx_i),
     .tx_o(tx_o),
     .reset(reset),
     .clk(clk));
