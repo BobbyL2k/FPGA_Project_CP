@@ -161,31 +161,12 @@ module SDReader(
 				waiter_start <= 1'b1;
 				
 				ns <= sWAIT_SET_SPI_MODE;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				sendcmd_start <= sendcmd_start;
-				address <= address;
-				deseres_start <= deseres_start;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sWAIT_SET_SPI_MODE : begin
 				waiter_start <= 1'b0;
 				
 				if(waiter_busy) ns <= ps;
 				else ns <= sSEND_CMD0;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				sendcmd_start <= sendcmd_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				deseres_start <= deseres_start;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sSEND_CMD0 : begin
 				sendcmd_start <= 1'b1;
@@ -193,14 +174,6 @@ module SDReader(
 				deseres_start <= 1'b1;
 				
 				ns <= sRESPONSE_CMD0;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;		
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sRESPONSE_CMD0 : begin
 				sendcmd_start <= 1'b0;
@@ -208,15 +181,6 @@ module SDReader(
 				
 				if(deseres_busy) ns <= ps;
 				else ns <= 	sSEND_CMD1;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sSEND_CMD1 : begin
 				sendcmd_start <= 1'b1;
@@ -224,14 +188,6 @@ module SDReader(
 				deseres_start <= 1'b1;
 				
 				ns <= sRESPONSE_CMD1;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sRESPONSE_CMD1 : begin
 				sendcmd_start <= 1'b0;
@@ -239,31 +195,11 @@ module SDReader(
 				
 				if(deseres_busy) ns <= ps;
 				else ns <= 	sCHECK;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sCHECK : begin
 				
 				if(count_DataPacket == num_DataPacket) ns <= sIDLE;
 				else ns <= sSEND_CMD17;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				sendcmd_start <= sendcmd_start;
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				deseres_start <= deseres_start;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sSEND_CMD17 : begin
 				sendcmd_start <= 1'b1;
@@ -271,14 +207,6 @@ module SDReader(
 				deseres_start <= 1'b1;
 				
 				ns <= sRESPONSE_CMD17;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;	
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sRESPONSE_CMD17 : begin
 				sendcmd_start <= 1'b0;
@@ -286,29 +214,10 @@ module SDReader(
 				
 				if(deseres_busy) ns <= ps;
 				else ns <= 	sWAIT_DATA;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sWAIT_DATA : begin
 				desedata_start <= 1'b1;
 				ns <= sGET_DATA;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				sendcmd_start <= sendcmd_start;
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				deseres_start <= deseres_start;
-				//-----------------------------------
 			end
 			sGET_DATA : begin
 				desedata_start <= 1'b0;
@@ -326,63 +235,24 @@ module SDReader(
 					waiter_count_to <= 8'b0001_1000; //24 d_clock
 					waiter_start <= 1'b1;
 				end
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				sendcmd_start <= sendcmd_start;
-				address <= address;
-				deseres_start <= deseres_start;
-				//-----------------------------------
 			end
 			sWAIT_NEXT_CHECK : begin
 				waiter_start <= 1'b0;
 				
 				if(waiter_busy) begin
 					ns <= ps;
-					count_DataPacket <= count_DataPacket;
-					address <= address;
 				end
 				else begin
 					ns <= sCHECK;
 					count_DataPacket <= count_DataPacket + 1;
 					address <= address + 32'b0000_0000_0000_0010_0000_0000_0000; //512
 				end
-				
-				//---------- Hold Value -----------;
-				sendcmd_data_in <= sendcmd_data_in;		
-				sendcmd_start <= sendcmd_start;
-				waiter_count_to <= waiter_count_to;
-				deseres_start <= deseres_start;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			sFINAL : begin
 				ns <= sIDLE;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				sendcmd_start <= sendcmd_start;
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				deseres_start <= deseres_start;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 			default : begin
 				ns <= sIDLE;
-				
-				//---------- Hold Value -----------
-				count_DataPacket <= count_DataPacket;
-				sendcmd_data_in <= sendcmd_data_in;		
-				sendcmd_start <= sendcmd_start;
-				waiter_start <= waiter_start;
-				waiter_count_to <= waiter_count_to;
-				address <= address;
-				deseres_start <= deseres_start;
-				desedata_start <= desedata_start;
-				//-----------------------------------
 			end
 		endcase
 	end
