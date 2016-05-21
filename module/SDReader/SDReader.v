@@ -86,6 +86,9 @@ module SDReader(
 	wire deseres_data_in;
 	wire desedata_data_in;
 	
+	wire start_PB_state,start_PB_down,start_PB_up;
+	wire reset_PB_state,reset_PB_down,reset_PB_up;
+	
 	wire [19:0] num_DataPacket;
 //----------------------------------------------------------
 
@@ -129,6 +132,10 @@ module SDReader(
 	Waiter #(.COUNTER_SIZE(8)) waiter(waiter_busy,waiter_start,waiter_count_to,d_clock,reset);
 	DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,deseres_data_in,d_clock,reset); //Deserializer for response1
 	DeserializerWithCounter #(.DATA_LENGTH(4096),.WORD_SIZE(8)) desedata(desedata_data_out,desedata_busy,desedata_RCO,desedata_start,desedata_data_in,d_clock,reset); //Deserializer for data block
+	
+	PushButton_Debouncer Debouncer(d_clock,start,start_PB_state,start_PB_down,start_PB_up);
+	PushButton_Debouncer Debouncer2(d_clock,reset,reset_PB_state,reset_PB_down,reset_PB_up);
+	
 	//fifo Fifo(fifo_front,fifo_rear,fifo_state,fifo_data_out,fifo_empty,fifo_busy,fifo_full,fifo_data_in,fifo_push,fifo_pop,reset,clock);
 //----------------------------------------------------------
 
