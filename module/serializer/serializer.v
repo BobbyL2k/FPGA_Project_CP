@@ -44,7 +44,7 @@ module serializer(
     initial begin
         ps <= 0;
         counter <= {{COUNTER_SIZE-1{1'b0}},1'b1};
-        data <= data_in;
+        data <= 0;
     end
 
     always @(posedge clock or posedge reset) begin

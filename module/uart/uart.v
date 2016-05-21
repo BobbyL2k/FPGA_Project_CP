@@ -87,7 +87,7 @@ module uart_receive(
     // .tx_o(tx_o),
     .reset(resetHelper),
     .d_clk(d_clk),
-    .data(data_wP),
+    .data(data_wP), // with parity
     .done(collectDone));
 
 endmodule // uart_receive
@@ -170,7 +170,7 @@ module uart_transmitter(
 	data,
 	busy,
 	send,
-	rx_i,
+	// rx_i,
 	tx_o,
 	reset,
 	clk
@@ -181,7 +181,7 @@ module uart_transmitter(
   input wire [number_of_bits-1:0] data;
   output wire busy;
   input wire send;
-  input wire rx_i;
+  // input wire rx_i;
   output wire tx_o;
   input wire reset;
   input wire clk;
@@ -193,7 +193,7 @@ module uart_transmitter(
   
   reg [1:0] c_state, n_state;
   
-  wire data_o, d_clk, start, reset_d_clk;
+  wire d_clk, start, reset_d_clk;
   wire [number_of_bits:0] data_in;
   //reg reset_d_clk;
   
