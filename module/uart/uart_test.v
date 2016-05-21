@@ -37,7 +37,7 @@ initial begin
     #400
     rx = 0; // 6
     #400
-    rx = 0; // 7
+     rx = 0; // 7
     #400
     rx = 0; // 8
     #400
@@ -73,3 +73,51 @@ uart_receive ur(
     .clk(clk));
 
 endmodule // uarthelper
+
+module uart_transmitter_test();
+
+  reg [8:0] data_in;
+  reg send, rx_i, reset, clk;
+  wire busy, tx_o;
+  
+  initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars(3);
+
+    reset = 0;
+    #40
+    reset = 1;
+    rx_i = 1;
+    #40
+    reset = 0;
+    #40
+    
+    data_in = 9'b1010_1011_1;
+    #100
+    send = 1;
+    #20
+    send = 0;
+    #1000
+    
+    #100 $finish;
+end
+  
+  parameter PERIOD = 20;
+  
+  always begin
+    clk = 1'b0;
+    #(PERIOD/2)
+    clk = 1'b1;
+    #(PERIOD/2);
+  end
+  
+  uart_transmitter ut(
+    .data(data_in),
+    .busy(busy),
+    .send(send),
+    .rx_i(rx_i),
+    .tx_o(tx_o),
+    .reset(reset),
+    .clk(clk));
+
+endmodule // uart_transmitter_test
