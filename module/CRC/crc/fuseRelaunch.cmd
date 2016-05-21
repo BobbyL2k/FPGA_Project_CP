@@ -1,0 +1,1 @@
+-intstyle "ise" -incremental -lib "unisims_ver" -lib "unimacro_ver" -lib "xilinxcorelib_ver" -o "C:/Users/jame/Documents/CRC/crc/crc_tb_isim_beh.exe" -prj "C:/Users/jame/Documents/CRC/crc/crc_tb_beh.prj" "work.crc_tb" "work.glbl" 
