@@ -8,16 +8,16 @@ module serializer(
     );
 
     parameter DATA_WIDTH = 8;
-    parameter COUNTER_SIZE = $clog2(DATA_WIDTH)+1;
+    parameter COUNTER_SIZE = clog2(DATA_WIDTH)+1;
 	 
-	// function integer clog2;
-	// 	input integer value;
-	// 	begin 
-	// 	value = value-1;
-	// 	for (clog2=0; value>0; clog2=clog2+1)
-	// 	value = value>>1;
-	// 	end 
-	// endfunction
+	 function integer clog2;
+	 	input integer value;
+	 	begin 
+	 	value = value-1;
+	 	for (clog2=0; value>0; clog2=clog2+1)
+	 	value = value>>1;
+	 	end 
+	 endfunction
 
     output wire busy;
     output wire data_out;
@@ -47,7 +47,7 @@ module serializer(
         data <= data_in;
     end
 
-    always @(posedge clock or reset) begin
+    always @(posedge clock or posedge reset) begin
         if(reset) begin
             ps <= 0;
             counter <= next_counter;

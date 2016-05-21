@@ -24,7 +24,7 @@ reg [COUNTER_SIZE-1:0] counter;
 reg c_d_clock, n_d_clock;
 assign d_clock = c_d_clock;
 
-always @( posedge clock or reset ) begin
+always @( posedge clock or posedge reset ) begin
   if(reset) begin
     counter = {COUNTER_SIZE{1'b0}};
   end else begin
@@ -36,7 +36,7 @@ always @( posedge clock or reset ) begin
   end
 end
 
-always @( posedge clock or reset ) begin
+always @( posedge clock or posedge reset ) begin
   if(reset) begin
     c_d_clock = 0;
   end else begin
