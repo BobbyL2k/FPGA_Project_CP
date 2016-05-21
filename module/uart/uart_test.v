@@ -90,14 +90,14 @@ module uart_transmitter_test();
     rx_i = 1;
     #40
     reset = 0;
-    #40
+    #400
     
     data_in = 9'b1010_1011_1;
     #100
     send = 1;
     #20
     send = 0;
-    #1000
+    #5000
     
     #100 $finish;
 end

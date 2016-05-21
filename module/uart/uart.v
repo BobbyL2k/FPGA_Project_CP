@@ -168,43 +168,50 @@ module uart_transmitter(
 
   parameter number_of_bits = 9;
   
-  parameter sActiveCheck = 1'b0;
-  parameter sSend = 1'b1;
+  parameter sInit = 2'b10;
+  parameter sActiveCheck = 2'b00;
+  parameter sPrepSend = 2'b01;
+  parameter sSend = 2'b11;
   
-  reg c_state, n_state;
+  reg [1:0] c_state, n_state;
   
-  wire data_o, d_clk;
-  reg start; //, reset_d_clk;
+  wire data_o, d_clk, start, reset_d_clk;
+  wire [number_of_bits:0] data_in;
+  //reg reset_d_clk;
+  
+  assign start = c_state == sPrepSend;
+  assign reset_d_clk = c_state == sInit;
+  assign data_in = {data, 1'b0};
   
   always @( posedge clk or posedge reset ) begin
     if( reset ) begin
-      c_state = sActiveCheck;
+      c_state = sInit;
     end else begin
       c_state = n_state;
     end
   end
   
   always @( * ) begin
-    if( c_state == sActiveCheck ) begin
+    if( c_state == sInit ) begin
+      n_state = sActiveCheck;
+    end else if( c_state == sActiveCheck ) begin
       if( send ) begin
+        n_state = sPrepSend;
+      end else begin
+        n_state = sActiveCheck;
+      end
+    end else if( c_state == sPrepSend ) begin
+      if( busy ) begin
+        n_state = sSend;
+      end else begin
+        n_state = sPrepSend;    
+      end
+    end else begin // sPrepSend
+      if( busy ) begin
         n_state = sSend;
       end else begin
         n_state = sActiveCheck;
       end
-    end else begin
-      if( busy ) begin
-        n_state = sSend;
-      end else begin
-        n_state = sActiveCheck;    
-      end
-    end
-  end
-  
-  always @( posedge clk ) begin
-    if( c_state == sActiveCheck && n_state == sSend ) begin
-      start = 1;
-    end else begin
-      start = 0;
     end
   end
   
@@ -217,10 +224,10 @@ module uart_transmitter(
   // end
   
   serializer #(
-    .DATA_WIDTH(9)) ser(
+    .DATA_WIDTH(10)) ser(
     .busy(busy),
     .data_out(tx_o),
-    .data_in(data),
+    .data_in(data_in),
     .start(start),
     .clock(d_clk),
     .reset(reset)
@@ -229,7 +236,7 @@ module uart_transmitter(
   clock_divider cd(
     .clock(clk),
     .d_clock(d_clk),
-    .reset(start)
+    .reset( reset_d_clk )
   );
 
 endmodule // uart_transmitter
