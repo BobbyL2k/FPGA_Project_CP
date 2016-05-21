@@ -89,6 +89,10 @@ module SDReader(
 	wire start_PB_state,start_PB_down,start_PB_up;
 	wire reset_PB_state,reset_PB_down,reset_PB_up;
 	
+	wire reset_module;
+	wire deseres_start;
+	wire desedata_start;
+	
 	wire [19:0] num_DataPacket;
 //----------------------------------------------------------
 
@@ -103,8 +107,6 @@ module SDReader(
 	reg [7:0] waiter_count_to;		   //number of d_clock for wait (max 8 bit)
 	reg [31:0] address;					//address 32bit of SDCard for read
 	
-	reg deseres_start;
-	reg desedata_start;
 //----------------------------------------------------------
 
 //------------------------ Assign --------------------------
@@ -120,21 +122,25 @@ module SDReader(
 	assign fifo_push = desedata_RCO;
 	
 	//LED
-	assign LED = {desedata_busy,waiter_busy,1'b0,ps};
+	//assign LED = (ps==sRESPONSE_CMD0 && !deseres_busy)? {deseres_data_out[7:0]} : {8'b0110_0110};
+	assign LED = {deseres_data_out[7:0]};
+	assign reset_module = (ps==sIDLE)? 1'b1 : 1'b0;
+	assign deseres_start = (ps == sSEND_CMD0||ps == sSEND_CMD1||ps == sSEND_CMD17)? 1'b1:1'b0;
+	assign desedata_start = (ps == sWAIT_DATA)? 1'b1:1'b0;
 	
 	assign num_DataPacket = 16'b0000_0000_0000_1000; // round = Mbyte(from DPSwitch) / 512 Byte //8
 	//assign num_data = 24'b0100_0000_0000_0000;// 0 to 512 * 8 =  4096
 //----------------------------------------------------------
 
 //---------------------- Call Module -----------------------
-	clock_divider #(.IN_FREQ(250),.OUT_FREQ(2))clkdiv(clock,d_clock,reset_PB_down);
-	serializer #(.DATA_WIDTH(48)) sendcmd(sendcmd_busy,sendcmd_data_out,sendcmd_data_in,sendcmd_start,d_clock,reset_PB_down);
-	Waiter #(.COUNTER_SIZE(8)) waiter(waiter_busy,waiter_start,waiter_count_to,d_clock,reset_PB_down);
-	DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,deseres_data_in,d_clock,reset_PB_down); //Deserializer for response1
-	DeserializerWithCounter #(.DATA_LENGTH(4096),.WORD_SIZE(8)) desedata(desedata_data_out,desedata_busy,desedata_RCO,desedata_start,desedata_data_in,d_clock,reset_PB_down); //Deserializer for data block
+	clock_divider #(.IN_FREQ(50),.OUT_FREQ(1))clkdiv(clock,d_clock,reset_PB_down);
+	serializer #(.DATA_WIDTH(48)) sendcmd(sendcmd_busy,sendcmd_data_out,sendcmd_data_in,sendcmd_start,d_clock,reset_module);
+	Waiter #(.COUNTER_SIZE(8)) waiter(waiter_busy,waiter_start,waiter_count_to,d_clock,reset_module);
+	DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,deseres_data_in,d_clock,reset_module); //Deserializer for response1
+	DeserializerWithCounter #(.DATA_LENGTH(4096),.WORD_SIZE(8)) desedata(desedata_data_out,desedata_busy,desedata_RCO,desedata_start,desedata_data_in,d_clock,reset_module); //Deserializer for data block
 	
 	PushButton_Debouncer Debouncer(d_clock,start,start_PB_state,start_PB_down,start_PB_up);
-	PushButton_Debouncer Debouncer2(d_clock,reset,reset_PB_state,reset_PB_down,reset_PB_up);
+	PushButton_Debouncer Debouncer2(clock,reset,reset_PB_state,reset_PB_down,reset_PB_up);
 	
 	//fifo Fifo(fifo_front,fifo_rear,fifo_state,fifo_data_out,fifo_empty,fifo_busy,fifo_full,fifo_data_in,fifo_push,fifo_pop,reset,clock);
 //----------------------------------------------------------
@@ -148,14 +154,16 @@ module SDReader(
 		waiter_start <= 1'b0;
 		waiter_count_to <= {8{1'b0}};
 		address <= {32{1'b0}};
-		deseres_start <= 1'b0;
-		desedata_start <= 1'b0;
 	end
 	
 	
-	always @ (posedge clock or posedge reset_PB_down) begin
-		if(reset_PB_down) ps <= 0;
-		else ps <= ns;
+	always @ (posedge d_clock or posedge reset_PB_down) begin
+		if(reset_PB_down) begin 
+			ps <= 0;
+		end
+		else begin	
+			ps <= ns;
+		end
 	end
 
 	always @( * ) begin
@@ -168,8 +176,6 @@ module SDReader(
 				waiter_start <= 1'b0;
 				waiter_count_to <= {8{1'b0}};
 				address <= {32{1'b0}};
-				deseres_start <= 1'b0;
-				desedata_start <= 1'b0;
 			//-----------------------------------
 				if(start_PB_down) ns <= sSET_SPI_MODE;
 				else ns <= ps;			
@@ -189,14 +195,14 @@ module SDReader(
 			end
 			sSEND_CMD0 : begin
 				sendcmd_start <= 1'b1;
-				sendcmd_data_in <= {2'b01,6'b00_0000,{32{1'b0}},7'b000_0000,1'b1}; //CMD0
-				deseres_start <= 1'b1;
+				//sendcmd_data_in <= {2'b01,6'b00_0000,{32{1'b0}},7'b000_0000,1'b1}; //CMD0
+				sendcmd_data_in <= {1'b1,7'b010_1001,{32{1'b0}},6'b00_0000,2'b10}; // invert and CRC7 = 0x95
+				//sendcmd_data_in <= {1'b1,7'b000_0000,{32{1'b0}},6'b00_0000,2'b10}; // invert and CRC7 = 0x95
 				
 				ns <= sRESPONSE_CMD0;
 			end
 			sRESPONSE_CMD0 : begin
 				sendcmd_start <= 1'b0;
-				deseres_start <= 1'b0;
 				
 				if(deseres_busy) ns <= ps;
 				else ns <= 	sSEND_CMD1;
@@ -204,13 +210,11 @@ module SDReader(
 			sSEND_CMD1 : begin
 				sendcmd_start <= 1'b1;
 				sendcmd_data_in <= {2'b01,6'b00_0001,{32{1'b0}},7'b000_0000,1'b1}; //CMD1
-				deseres_start <= 1'b1;
 				
 				ns <= sRESPONSE_CMD1;
 			end
 			sRESPONSE_CMD1 : begin
 				sendcmd_start <= 1'b0;
-				deseres_start <= 1'b0;
 				
 				if(deseres_busy) ns <= ps;
 				else ns <= 	sCHECK;
@@ -223,24 +227,20 @@ module SDReader(
 			sSEND_CMD17 : begin
 				sendcmd_start <= 1'b1;
 				sendcmd_data_in <= {2'b01,6'b01_0001,address,7'b000_0000,1'b1}; //CMD1
-				deseres_start <= 1'b1;
 				
 				ns <= sRESPONSE_CMD17;
 			end
 			sRESPONSE_CMD17 : begin
 				sendcmd_start <= 1'b0;
-				deseres_start <= 1'b0;
 				
 				if(deseres_busy) ns <= ps;
 				else ns <= 	sWAIT_DATA;
 			end
 			sWAIT_DATA : begin
-				desedata_start <= 1'b1;
 				ns <= sGET_DATA;
 			end
 			sGET_DATA : begin
-				desedata_start <= 1'b0;
-				
+
 				//if(desedata_RCO) push(desedata_data_out) to FIFO //8bit
 				
 				if(desedata_busy) begin
