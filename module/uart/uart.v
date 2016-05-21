@@ -166,13 +166,15 @@ module uart_transmitter(
   input wire clk
 );
 
+  parameter number_of_bits = 9;
+  
   parameter sActiveCheck = 1'b0;
   parameter sSend = 1'b1;
   
   reg c_state, n_state;
   
   wire busy, data_o, d_clk;
-  reg start, reset_d_clk;
+  reg start; //, reset_d_clk;
   
   always @( posedge clk or posedge reset ) begin
     if( reset ) begin
@@ -206,13 +208,13 @@ module uart_transmitter(
     end
   end
   
-  always @( posedge clk ) begin
-    if( c_state == sSend && n_state == sActiveCheck ) begin
-      reset_d_clk = 1;
-    end else begin
-      reset_d_clk = 0;
-    end
-  end
+  // always @( posedge clk ) begin
+  //   if( c_state == sSend && n_state == sActiveCheck ) begin
+  //     reset_d_clk = 1;
+  //   end else begin
+  //     reset_d_clk = 0;
+  //   end
+  // end
   
   serializer #(
     .DATA_WIDTH(8)) ser(
@@ -227,7 +229,7 @@ module uart_transmitter(
   clock_divider cd(
     .clock(clk),
     .d_clock(d_clk),
-    .reset(reset_d_clk)
+    .reset(start)
   );
 
 endmodule // uart_transmitter
