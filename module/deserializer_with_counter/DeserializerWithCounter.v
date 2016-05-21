@@ -9,9 +9,9 @@ module DeserializerWithCounter(
     );
 
     parameter DATA_LENGTH = 16; // length of serial input
-    parameter DATA_COUNTER_SIZE = clog2(DATA_LENGTH)+1;
+    parameter DATA_COUNTER_SIZE = $clog2(DATA_LENGTH)+1;
     parameter WORD_SIZE = 8;    // size of data_out and RCO will assert 1 at the end of word
-    parameter WORD_COUNTER_SIZE = clog2(WORD_SIZE)+1;
+    parameter WORD_COUNTER_SIZE = $clog2(WORD_SIZE)+1;
     parameter START_BIT = 1'b0;
 	 
 		function integer clog2;
@@ -50,7 +50,7 @@ module DeserializerWithCounter(
     assign added_data_counter = data_counter + 1;
     assign next_counter = (ps == 2 && !lastBitInWord) ? added_word_counter : (ps == 2) ? {{WORD_COUNTER_SIZE-1{1'b0}},{1'b1}} : {WORD_COUNTER_SIZE{1'b0}};
     assign next_data_counter = (ps == 2) ? added_data_counter : {DATA_COUNTER_SIZE{1'b0}};
-    assign next_data = (ps == 2) ? {data_in,data[WORD_SIZE-1 : 1]} : {WORD_SIZE{1'b0}};
+    assign next_data = (ps == 2 && ns != 1'b0) ? {data_in,data[WORD_SIZE-1 : 1]} : data;
     assign lastBitInWord = (counter == WORD_SIZE) ? 1'b1 : 1'b0;
     assign lastBitInData = (data_counter == DATA_LENGTH) ? 1'b1 : 1'b0;
     assign RCO = lastBitInWord;
