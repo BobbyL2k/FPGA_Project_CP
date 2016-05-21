@@ -26,7 +26,10 @@ module SDReader(
 	CS,
 	SCLK,
 	MOSI,
-	busy
+	busy,
+	fifo_data_in,
+	fifo_push,
+	LED
     );
 	 
 //---------------------- Define State ----------------------
@@ -64,6 +67,10 @@ module SDReader(
 	output wire SCLK;
 	output wire MOSI;
 	output wire busy;
+	output wire [7:0] fifo_data_in;
+	output wire fifo_push;
+	
+	output wire [7:0]LED;
 //----------------------------------------------------------
 
 //-------------------------- Wire --------------------------
@@ -106,13 +113,18 @@ module SDReader(
 	assign deseres_data_in = MISO;
 	assign desedata_data_in = MISO;
 	
+	assign fifo_data_in = desedata_data_out;
+	assign fifo_push = desedata_RCO;
+	
+	//LED
+	assign LED = {3'b000,ps};
 	
 	assign num_DataPacket = 16'b0000_0000_0000_1000; // round = Mbyte(from DPSwitch) / 512 Byte //8
 	//assign num_data = 24'b0100_0000_0000_0000;// 0 to 512 * 8 =  4096
 //----------------------------------------------------------
 
 //---------------------- Call Module -----------------------
-	clock_divider clkdiv(clock,d_clock,reset);
+	clock_divider #(.IN_FREQ(250),.OUT_FREQ(2))clkdiv(clock,d_clock,reset);
 	serializer #(.DATA_WIDTH(48)) sendcmd(sendcmd_busy,sendcmd_data_out,sendcmd_data_in,sendcmd_start,d_clock,reset);
 	Waiter #(.COUNTER_SIZE(8)) waiter(waiter_busy,waiter_start,waiter_count_to,d_clock,reset);
 	DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,deseres_data_in,d_clock,reset); //Deserializer for response1
