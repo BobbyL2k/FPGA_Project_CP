@@ -19,9 +19,12 @@ module serializer_tb();
         $dumpvars(3);
         #50 reset = 1;
         #100 reset = 0;
-        #50 start = 1;
+        #100 start = 1;
         #100 start = 0;
-        #5000 $finish;
+        #800 data_in = 8'b0110_1000;
+             start = 1;
+        #100 start = 0;
+        #1000 $finish;
     end
 
     always
