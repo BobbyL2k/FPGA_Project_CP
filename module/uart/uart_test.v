@@ -87,7 +87,7 @@ module uart_transmitter_test();
     reset = 0;
     #40
     reset = 1;
-    rx = 1;
+    rx_i = 1;
     #40
     reset = 0;
     #40
@@ -98,8 +98,6 @@ module uart_transmitter_test();
     #20
     send = 0;
     #1000
-    
-    
     
     #100 $finish;
 end

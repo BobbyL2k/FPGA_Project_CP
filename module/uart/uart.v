@@ -173,7 +173,7 @@ module uart_transmitter(
   
   reg c_state, n_state;
   
-  wire busy, data_o, d_clk;
+  wire data_o, d_clk;
   reg start; //, reset_d_clk;
   
   always @( posedge clk or posedge reset ) begin
@@ -217,10 +217,10 @@ module uart_transmitter(
   // end
   
   serializer #(
-    .DATA_WIDTH(8)) ser(
+    .DATA_WIDTH(9)) ser(
     .busy(busy),
-    .data_out,
-    .data_in,
+    .data_out(tx_o),
+    .data_in(data),
     .start(start),
     .clock(d_clk),
     .reset(reset)
