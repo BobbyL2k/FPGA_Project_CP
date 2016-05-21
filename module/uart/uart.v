@@ -154,3 +154,35 @@ module uart_receive_helper(
   end
 
 endmodule // uart_receive_helper
+
+module uart_transmitter(
+  input wire [number_of_bits-1:0] data,
+  output wire busy,
+  input wire send,
+  input wire rx_i,
+  output wire tx_o,
+  input wire reset,
+  input wire clk
+);
+
+  parameter number_of_bits = 8+1;
+
+  parameter sIdle   = 4'b1111;
+  parameter sStart  = 4'b0000;
+  parameter sData   = 4'b0001;
+  parameter sEnd    = sData + number_of_bits;
+                  //= 4'b0110
+
+  reg [3:0] c_state, n_state;
+  
+  always @( clk ) begin
+    
+  end
+
+  clock_divider cd(
+    .clock(clk),
+    .d_clock(d_clk),
+    .reset(send)
+  );
+
+endmodule // uart_transmitter
