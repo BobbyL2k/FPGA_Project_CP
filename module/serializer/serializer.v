@@ -50,7 +50,7 @@ module serializer(
     always @(posedge clock or reset) begin
         if(reset) begin
             ps <= 0;
-            counter <= next_counter;
+            counter <= {{COUNTER_SIZE-1{1'b0}},1'b1};
             data <= data_in;
         end
         else begin
