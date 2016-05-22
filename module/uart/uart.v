@@ -194,12 +194,12 @@ module uart_transmitter(
   reg [1:0] c_state, n_state;
   
   wire d_clk, start, reset_d_clk;
-  wire [number_of_bits:0] data_in;
+  wire [number_of_bits+1:0] data_in;
   //reg reset_d_clk;
   
   assign start = c_state == sPrepSend;
   assign reset_d_clk = c_state == sInit;
-  assign data_in = {data, ^data};
+  assign data_in = {1'b0, data, ^data}; // {StartBit, data, parity}
   
   always @( posedge clk or posedge reset ) begin
     if( reset ) begin
@@ -258,57 +258,3 @@ module uart_transmitter(
   );
 
 endmodule // uart_transmitter
-
-// module uart_transmitter_helper(
-//   input wire [number_of_bits-1:0] data,
-//   output wire busy,
-//   input wire send,
-//   input wire rx_i,
-//   output wire tx_o,
-//   input wire reset,
-//   input wire clk
-// );
-
-//   parameter number_of_bits = 8+1;
-
-//   parameter sIdle   = 4'b1110;
-//   parameter sStart  = 4'b1111;
-//   parameter sData   = 4'b0000;
-//   parameter sEnd    = sData + number_of_bits;
-//                  // = 4'b0101
-
-//   reg [3:0] c_state, n_state;
-  
-//   always @( posedge clk or reset ) begin
-//     if( reset ) begin
-//       c_state = sIdle;
-//     end else begin
-//       c_state = n_state;
-//     end
-//   end
-  
-//   always @( * ) begin
-//     if( c_state == sIdle ) begin
-//       if( send == 1 ) begin
-//         n_state = sStart;
-//       end else begin
-//         n_state = sIdle;
-//       end
-//     end else if( c_state == sEnd ) begin
-//       n_state = sIdle;
-//     end else begin
-//       n_state = c_state + 1;
-//     end
-//   end
-  
-//   always @( posedge clk or reset ) begin
-//     if( c_state == sIdle )
-//   end
-
-//   // clock_divider cd(
-//   //   .clock(clk),
-//   //   .d_clock(d_clk),
-//   //   .reset(send)
-//   // );
-
-// endmodule // uart_transmitter_helper

@@ -55,3 +55,16 @@ assign PB_up   = ~PB_idle & PB_cnt_max &  PB_state;
 
 
 endmodule
+
+
+module PushButton_Debouncer_dummy(
+    input clk,
+    input PB,  // "PB" is the glitchy, asynchronous to clk, active low push-button signal
+
+    // from which we make three outputs, all synchronous to the clock
+    output PB_state
+);
+
+    assign PB_state = PB;
+
+endmodule // PushButton_Debouncer_dummy
