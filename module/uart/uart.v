@@ -29,7 +29,15 @@ module uart_receive(
   wire collectDone, d_clk;
   wire [8:0]data_wP;
 
-  assign data = data_wP[7:0];
+  reg [7:0] buffer [1:0];
+  wire [7:0] l_buffer0, l_buffer1;
+  
+  reg buffer_sel, n_buffer_sel;
+  
+  assign data = buffer[~buffer_sel];
+  
+  assign l_buffer0 = (buffer_sel) ? buffer[0] : data_wP[7:0];
+  assign l_buffer1 = (buffer_sel) ? data_wP[7:0] : buffer[1];
   
   wire l_ready_reset;
 
@@ -54,6 +62,24 @@ module uart_receive(
       c_state = n_state;
     end
   end
+  
+  always @( posedge clk or posedge reset ) begin
+    if( reset ) begin
+      buffer[0] = 8'b0000_0000;
+      buffer[1] = 8'b0000_0000;
+    end else begin
+      buffer[0] = l_buffer0;
+      buffer[1] = l_buffer1;
+    end
+  end
+  
+  always @( posedge clk or posedge reset ) begin
+    if( reset ) begin
+      buffer_sel = 1'b0;
+    end else begin
+      buffer_sel = n_buffer_sel;
+    end
+  end
 
   always @( * ) begin
     if( c_state == sActiveCheck ) begin
@@ -68,6 +94,24 @@ module uart_receive(
       end else begin
         n_state = sCollect;
       end
+    end
+  end
+  
+  // always @( * ) begin
+  //   if( buffer_sel ) begin
+  //     l_buffer0 = buffer[0];
+  //     l_buffer1 = data_wP[7:0];
+  //   end else begin
+  //     l_buffer0 = data_wP[7:0];
+  //     l_buffer1 = buffer[1];
+  //   end
+  // end
+  
+  always @( * ) begin
+    if( c_state == sCollect && n_state == sActiveCheck ) begin
+      n_buffer_sel = ~buffer_sel;
+    end else begin
+      n_buffer_sel = buffer_sel;
     end
   end
 
