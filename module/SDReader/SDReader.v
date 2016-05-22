@@ -64,6 +64,11 @@ module SDReader(
 		parameter sSEND_CMD41 = 5'b10101;
 		parameter sRESPONSE_CMD41 = 5'b10110;
 		parameter sSET_CS_HIGH_CMD41 = 5'b10111;
+		
+		
+		parameter sSEND_CMD58 = 5'b11000;
+		parameter sRESPONSE_CMD58 = 5'b11001;
+		parameter sSET_CS_HIGH_CMD58 = 5'b11010;
 
 		parameter sFINAL = 5'b11111;
 	//----------------------------------------------------------
@@ -118,19 +123,19 @@ module SDReader(
 	
 	assign deseres_data_in = MISO;
 	assign desdata_data_in = MISO;
-	assign deseres_start = (ps == sSEND_CMD8 ||ps == sSEND_CMD0 || ps == sSEND_CMD1 || ps == sSEND_CMD55 || ps == sSEND_CMD41)? 1'b1 : 1'b0;
+	assign deseres_start = (ps == sSEND_CMD58 || ps == sSEND_CMD8 ||ps == sSEND_CMD0 || ps == sSEND_CMD1 || ps == sSEND_CMD55 || ps == sSEND_CMD41)? 1'b1 : 1'b0;
 	assign deseres7_data_in = MISO;
-	assign deseres7_start = (ps == sSEND_CMD8) ? 1'b1 : 1'b0;
+	assign deseres7_start = (ps == sSEND_CMD8 || ps == sSEND_CMD58) ? 1'b1 : 1'b0;
 	
 	assign fifo_data_in = desedata_data_out;
 	assign fifo_push = desedata_RCO;
 	
 	assign reset_module = (ps == sIDLE) ? 1'b1 : 1'b0;
-	assign waiter_start = (ps == sSET_SPI_MODE || ps == sSEND_CMD1 || ps == sSEND_CMD55 || ps == sSEND_CMD41 || ps == sSEND_CMD0) ? 1'b1 : 1'b0;
+	assign waiter_start = (ps == sSET_SPI_MODE || ps == sSEND_CMD1 || ps == sSEND_CMD55 || ps == sSEND_CMD41 || ps == sSEND_CMD0 || ps == sSEND_CMD58) ? 1'b1 : 1'b0;
 	assign waiter_count_to = (ps == sSET_SPI_MODE) ? 8'hF0 : 8'h50;
-	assign sendcmd_start = (ps == sSEND_CMD0 || ps == sSEND_CMD8 || ps == sSEND_CMD1 || ps == sSEND_CMD55 || ps == sSEND_CMD41) ? 1'b1 : 1'b0;
+	assign sendcmd_start = (ps == sSEND_CMD0 || ps == sSEND_CMD8 || ps == sSEND_CMD1 || ps == sSEND_CMD55 || ps == sSEND_CMD41 || ps == sSEND_CMD58) ? 1'b1 : 1'b0;
 	
-	assign LED =  (ps == sSET_CS_HIGH_CMD8) ? deseres7_data_out : deseres_data_out;
+	assign LED =  (ps == sSET_CS_HIGH_CMD8 || ps == sFINAL) ? deseres7_data_out : deseres_data_out;
 	//assign LED = (ps == sFINAL) ? deseres_data_out : (ps == sRESPONSE_CMD0)? 8'hAA : 8'h66;
 	//assign LED = {deseres_busy,waiter_busy,deseres_data_out[7],ps};
 	//---------------------- Call Module -----------------------
@@ -247,9 +252,22 @@ module SDReader(
 				
 				sSET_CS_HIGH_CMD41 : begin
 					if(!deseres_busy && (|deseres_data_out[7:1]) == 0)
-						ns <= sFINAL;
+						ns <= sSEND_CMD58;
 					else 
 						ns <= sSEND_CMD55;
+				end
+				
+				sSEND_CMD58 : begin
+					ns <= sRESPONSE_CMD58;
+				end
+				
+				sRESPONSE_CMD58 : begin
+					if(deseres7_busy) ns <= sRESPONSE_CMD58;
+					else ns <= sSET_CS_HIGH_CMD58;
+				end
+				
+				sSET_CS_HIGH_CMD58 : begin
+					ns <= sFINAL;
 				end
 				
 				sFINAL : begin
@@ -268,6 +286,7 @@ module SDReader(
 			sSEND_CMD8  : sendcmd_data_in <= {48'b1110_0001_0101_0101_1000_0000_0000_0000_0000_0000_0001_0010};	
 			sSEND_CMD55 : sendcmd_data_in <= {48'b1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_1110_1110};
 			sSEND_CMD41 : sendcmd_data_in <= {48'b1111_1111_0000_0000_0000_0000_0000_0000_0000_0010_1001_0110};
+			sSEND_CMD58 : sendcmd_data_in <= {48'b1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0101_1110};
 			default : sendcmd_data_in <= 48'hFFFF_FFFF_FFFF;
 		endcase
 	end
