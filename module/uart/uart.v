@@ -206,7 +206,7 @@ module uart_transmitter(
   
   assign start = c_state == sPrepSend;
   assign reset_d_clk = c_state == sInit;
-  assign data_in = {1'b0, data, ^data}; // {StartBit, data, parity}
+  assign data_in = {^data, data, 1'b0}; // {StartBit, data, parity}
   
   always @( posedge clk or posedge reset ) begin
     if( reset ) begin
