@@ -51,7 +51,8 @@ module uart_pc_2_pc(
   input wire clk,
   input wire rx,
   output wire tx,
-  input wire reset
+  input wire reset,
+  output wire tr_received
 );
 
   // Real World
@@ -69,8 +70,9 @@ module uart_pc_2_pc(
   wire 
     db_reset, // debounced reset signal
     dummy_tx, // dummy tx wire
-    tr_send,  // trigger send signal from (uart_transmitter posedge busy) 
-    ut_busy;  // uart transmitter being busy sending data to PC
+    tr_send,  // trigger send signal from (uart_receive posedge data_ready) 
+    ut_busy,  // uart transmitter being busy sending data to PC
+    tr_reset_ready; // trigger send signal from (uart_transmitter posedge busy) 
     
   
   PushButton_Debouncer reset_db(
@@ -78,6 +80,18 @@ module uart_pc_2_pc(
       .PB(reset),
       .PB_state(db_reset)
 	  );
+    
+  single_pulser send_sp(
+    .signal_in(data_ready),
+    .signal_out(tr_send),
+    .clk(clock),
+    .reset(db_reset)
+  ),busy_sp(
+    .signal_in(ut_busy),
+    .signal_out(tr_send),
+    .clk(clock),
+    .reset(db_reset)
+  );
 	
   uart_receive #(
       .IN_FREQ(IN_FREQ),
@@ -85,7 +99,7 @@ module uart_pc_2_pc(
     uartr(
       .data(data),
       .ready(data_ready),
-      .reset_ready(tr_send),
+      .reset_ready(tr_reset_ready),
       .rx_i(rx),
       .tx_o(dummy_tx),
       .reset(db_reset),
@@ -97,7 +111,7 @@ module uart_pc_2_pc(
       .OUT_FREQ(OUT_FREQ)) 
     uartt(
       .data(data),
-      .busy(busy),
+      .busy(ut_busy),
       .send(tr_send),
       .tx_o(tx),
       .reset(db_reset),
