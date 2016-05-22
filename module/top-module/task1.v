@@ -5,25 +5,35 @@ module task1_t_test(
   input wire clk,
   input wire rx,
   output wire tx,
-  input wire reset
+  input wire reset,
+  input wire send,
+  output wire busy
 );
 
-  parameter IN_FREQ = 25000000;
+  parameter IN_FREQ = 24250000;
   parameter OUT_FREQ = 9600;
   // parameter IN_FREQ = 20;
   // parameter OUT_FREQ = 1;
   
   wire [7:0] data;
-  wire busy, send, l_reset;
+  wire db_reset, tr_send;
+  wire clock;
   
-  assign data = 8'b1100_1001;
-  assign send = 1'b1;
+  assign clock = clk;
+  
+  assign data = 8'b1000_1110;
+  //assign send = 1'b1;
   //assign l_reset = reset;
 
-  PushButton_Debouncer_dummy reset_db(
-    .clk(clk),
+  PushButton_Debouncer reset_db(
+    .clk(clock),
 	 .PB(reset),
-	 .PB_state(l_reset)
+	 .PB_state(db_reset)
+	 ),
+	 send_db(
+    .clk(clock),
+	 .PB(send),
+	 .PB_down(tr_send)
 	 );
 	
 	//assign tx = rx;
@@ -33,10 +43,10 @@ module task1_t_test(
     .OUT_FREQ(OUT_FREQ)) uartt(
     .data(data),
     .busy(busy),
-    .send(send),
+    .send(tr_send),
     .tx_o(tx),
-    .reset(l_reset),
-    .clk(clk)
+    .reset(db_reset),
+    .clk(clock)
   );
   
   
