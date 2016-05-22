@@ -10,8 +10,8 @@ module task1_t_test(
   output wire busy
 );
 
-  parameter IN_FREQ = 24250000;
-  parameter OUT_FREQ = 9600;
+  parameter IN_FREQ = 220052;
+  parameter OUT_FREQ = 96;
   // parameter IN_FREQ = 20;
   // parameter OUT_FREQ = 1;
   
