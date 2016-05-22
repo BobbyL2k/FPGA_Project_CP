@@ -177,6 +177,8 @@ module uart_transmitter(
 );
 
   parameter number_of_bits = 8;
+  parameter IN_FREQ = 20;
+  parameter OUT_FREQ = 1;
   
   input wire [number_of_bits-1:0] data; // w/o parity
   output wire busy;
@@ -251,7 +253,9 @@ module uart_transmitter(
     .reset(reset)
   );
   
-  clock_divider cd(
+  clock_divider #(
+    .IN_FREQ(IN_FREQ),
+    .OUT_FREQ(OUT_FREQ)) cd(
     .clock(clk),
     .d_clock(d_clk),
     .reset( reset_d_clk )
