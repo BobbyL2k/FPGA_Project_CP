@@ -55,6 +55,7 @@ module SDReader(
 		parameter sSEND_CMD8 = 5'b01110;
 		parameter sRESPONSE_CMD8 = 5'b01111;
 		parameter sSET_CS_HIGH_CMD8 = 5'b10000;
+		parameter sSET_CS_HIGH_CMD1 = 5'b10001;
 
 		parameter sFINAL = 5'b11111;
 	//----------------------------------------------------------
@@ -96,12 +97,13 @@ module SDReader(
 	
 	
 	assign MOSI = (sendcmd_busy) ? sendcmd_data_out : 1'b1;
-	assign CS = (ps == sSET_SPI_MODE || ps == sWAIT_SET_SPI_MODE || ps == sSET_CS_HIGH_CMD0 || ps == sSET_CS_HIGH_CMD8) ? 1'b1 : 1'b0;
+	assign CS = (ps == sSET_SPI_MODE || ps == sWAIT_SET_SPI_MODE || ps == sSET_CS_HIGH_CMD0 
+					|| ps == sSET_CS_HIGH_CMD8 || ps == sSET_CS_HIGH_CMD1) ? 1'b1 : 1'b0;
 	assign SCLK = (ps == sSET_SPI_MODE || ps == sWAIT_SET_SPI_MODE) ? d_clock : clock;
 	
 	assign deseres_data_in = MISO;
 	assign desdata_data_in = MISO;
-	assign deseres_start = (ps == sSEND_CMD0 || ps == sSEND_CMD8)? 1'b1 : 1'b0;
+	assign deseres_start = (ps == sSEND_CMD0 || ps == sSEND_CMD8 || ps == sSEND_CMD1)? 1'b1 : 1'b0;
 	
 	
 	assign fifo_data_in = desedata_data_out;
@@ -110,7 +112,7 @@ module SDReader(
 	assign reset_module = (ps == sIDLE) ? 1'b1 : 1'b0;
 	assign waiter_start = (ps == sSET_SPI_MODE) ? 1'b1 : 1'b0;
 	assign waiter_count_to = (ps == sSET_SPI_MODE) ? 8'h50 : 8'h18;
-	assign sendcmd_start = (ps == sSEND_CMD0 || ps == sSEND_CMD8) ? 1'b1 : 1'b0;
+	assign sendcmd_start = (ps == sSEND_CMD0 || ps == sSEND_CMD8 || ps == sSEND_CMD1) ? 1'b1 : 1'b0;
 	
 	assign LED = (ps == sFINAL) ? deseres_data_out : (ps == sRESPONSE_CMD0)? 8'hAA : 8'h66;
 	
@@ -180,7 +182,20 @@ module SDReader(
 				end
 				
 				sSET_CS_HIGH_CMD8 : begin
-						ns <= sFINAL;
+						ns <= sSEND_CMD1;
+				end
+				
+				sSEND_CMD1 : begin
+					ns <= sRESPONSE_CMD1;
+				end
+				
+				sRESPONSE_CMD1 : begin
+					if(deseres_busy) ns <= sRESPONSE_CMD8;
+					else ns <= sSET_CS_HIGH_CMD1;
+				end
+				
+				sSET_CS_HIGH_CMD1 : begin
+					ns <= sFINAL;
 				end
 				
 				sFINAL : begin
@@ -195,7 +210,7 @@ module SDReader(
 	always @(*) begin
 		case(ps) 
 			sSEND_CMD0 : sendcmd_data_in <= {1'b1,7'b010_1001,{32{1'b0}},6'b00_0000,2'b10};
-			//sSEND_CMD8 : sendcmd_data_in <= {0100_1000_0000_0000_0000_0000_0000_0001_1010_1010_1000_0111};
+			sSEND_CMD1 : sendcmd_data_in <= {48'b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000_0010};
 			sSEND_CMD8 : sendcmd_data_in <= {48'b1111_0000_0101_0101_1000_0000_0000_0000_0000_0000_0001_0010};	
 			default : sendcmd_data_in <= 48'hFFFF_FFFF_FFFF;
 		endcase
