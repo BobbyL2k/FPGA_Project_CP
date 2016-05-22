@@ -176,9 +176,9 @@ module uart_transmitter(
 	clk
 );
 
-  parameter number_of_bits = 9;
+  parameter number_of_bits = 8;
   
-  input wire [number_of_bits-1:0] data;
+  input wire [number_of_bits-1:0] data; // w/o parity
   output wire busy;
   input wire send;
   // input wire rx_i;
@@ -199,7 +199,7 @@ module uart_transmitter(
   
   assign start = c_state == sPrepSend;
   assign reset_d_clk = c_state == sInit;
-  assign data_in = {data, 1'b0};
+  assign data_in = {data, ^data};
   
   always @( posedge clk or posedge reset ) begin
     if( reset ) begin

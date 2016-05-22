@@ -7,10 +7,10 @@ module task1(
   input wire reset
 );
 
-  wire [8:0] data;
+  wire [7:0] data;
   wire busy, send, l_reset;
   
-  assign data = 9'b1_1111_1111;
+  assign data = 8'b1100_1001;
   assign send = 1'b1;
   assign l_reset = reset;
 
@@ -19,7 +19,8 @@ module task1(
     .busy(busy),
     .send(send),
     .tx_o(tx),
-    .reset(l_reset)
+    .reset(l_reset),
+    .clk(clk)
   );
 
 endmodule // task1

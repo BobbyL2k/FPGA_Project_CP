@@ -26,7 +26,7 @@ module task1_test(
     reset = 0;
     #100
     
-    #1000 $finish;
+    #10000 $finish;
   end
 
   parameter PERIOD = 20;
