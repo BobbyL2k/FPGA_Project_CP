@@ -53,7 +53,9 @@ module uart_pc_2_pc(
   input wire rx,
   output wire tx,
   input wire reset,
-  output reg tr_received
+  output reg tr_received,
+  output wire m_data_ready,
+  output wire m_ut_busy
 );
 
   // Real World
@@ -63,25 +65,30 @@ module uart_pc_2_pc(
   // parameter IN_FREQ = 20;
   // parameter OUT_FREQ = 1;
   
+  wire tr_received_n;
+  assign tr_received_n = ~tr_received;
+  
   wire clock;
   assign clock = clk;
   
   wire [7:0] 
     data;     // data received from PC by uart_receive
   wire 
-    db_reset, // debounced reset signal
-    // dummy_tx, // dummy tx wire
-    tr_send,  // trigger send signal from (uart_receive posedge data_ready) 
-    ut_busy,  // uart transmitter being busy sending data to PC
+    db_reset,     // debounced reset signal
+    // dummy_tx,  // dummy tx wire
+    data_ready,   // data received and ready
+    tr_send,      // trigger send signal from (uart_receive posedge data_ready) 
+    ut_busy,      // uart transmitter being busy sending data to PC
     tr_reset_ready; // trigger send signal from (uart_transmitter posedge busy) 
+    
+  assign m_data_ready = data_ready;
+  assign m_ut_busy = ut_busy;
   
   always @( posedge clock or posedge db_reset ) begin
     if( db_reset ) begin
       tr_received = 1;
     end else if( tr_send ) begin
-      tr_received = ~tr_received;
-    end else begin
-      tr_received = tr_received;
+      tr_received = tr_received_n;
     end
   end
   
