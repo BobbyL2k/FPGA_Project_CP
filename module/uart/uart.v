@@ -10,6 +10,9 @@ module uart_receive(
   input wire clk
 );
 
+  parameter IN_FREQ = 20;
+  parameter OUT_FREQ = 1;
+
   parameter rx_start_bit = 1'b0;
   parameter rx_stop_bit  = 1'b1;
 
@@ -76,7 +79,9 @@ module uart_receive(
     end
   end
 
-  clock_divider cd(
+  clock_divider #(
+    .IN_FREQ(IN_FREQ),
+    .OUT_FREQ(OUT_FREQ)) cd(
     .clock(clk),
     .d_clock(d_clk),
     .reset(resetHelper)
