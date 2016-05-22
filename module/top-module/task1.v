@@ -70,7 +70,7 @@ module uart_pc_2_pc(
     db_reset, // debounced reset signal
     dummy_tx, // dummy tx wire
     tr_send,  // trigger send signal from (uart_transmitter posedge busy) 
-    ut_busy,  // uart transmitter being busy sending data to PC
+    ut_busy;  // uart transmitter being busy sending data to PC
     
   
   PushButton_Debouncer reset_db(
