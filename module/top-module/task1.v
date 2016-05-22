@@ -1,4 +1,5 @@
 `include "../uart/uart.v"
+`include "../single_pulser/single_pulser.v"
 `include "../PushButton_Debouncer/PushButton_Debouncer.v"
 
 module task1_t_test(
@@ -52,7 +53,7 @@ module uart_pc_2_pc(
   input wire rx,
   output wire tx,
   input wire reset,
-  output wire tr_received
+  output reg tr_received
 );
 
   // Real World
@@ -69,11 +70,20 @@ module uart_pc_2_pc(
     data;     // data received from PC by uart_receive
   wire 
     db_reset, // debounced reset signal
-    dummy_tx, // dummy tx wire
+    // dummy_tx, // dummy tx wire
     tr_send,  // trigger send signal from (uart_receive posedge data_ready) 
     ut_busy,  // uart transmitter being busy sending data to PC
     tr_reset_ready; // trigger send signal from (uart_transmitter posedge busy) 
-    
+  
+  always @( posedge clock or posedge db_reset ) begin
+    if( db_reset ) begin
+      tr_received = 1;
+    end else if( tr_send ) begin
+      tr_received = ~tr_received;
+    end else begin
+      tr_received = tr_received;
+    end
+  end
   
   PushButton_Debouncer reset_db(
       .clk(clock),
@@ -88,7 +98,7 @@ module uart_pc_2_pc(
     .reset(db_reset)
   ),busy_sp(
     .signal_in(ut_busy),
-    .signal_out(tr_send),
+    .signal_out(tr_reset_ready),
     .clk(clock),
     .reset(db_reset)
   );
@@ -101,7 +111,6 @@ module uart_pc_2_pc(
       .ready(data_ready),
       .reset_ready(tr_reset_ready),
       .rx_i(rx),
-      .tx_o(dummy_tx),
       .reset(db_reset),
       .clk(clock)
     );
