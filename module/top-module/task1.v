@@ -12,8 +12,17 @@ module task1(
   
   assign data = 8'b1100_1001;
   assign send = 1'b1;
-  assign l_reset = reset;
+  //assign l_reset = reset;
 
+
+  PushButton_Debouncer a(
+    .clk(clk),
+	 .PB(reset),
+	 .PB_state(l_reset)
+	 );
+	
+	//assign tx = rx;
+	
   uart_transmitter uartt(
     .data(data),
     .busy(busy),
@@ -22,5 +31,7 @@ module task1(
     .reset(l_reset),
     .clk(clk)
   );
+  
+  
 
 endmodule // task1
