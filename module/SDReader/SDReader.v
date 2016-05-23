@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date:    23:32:43 05/20/2016 
+// Create Date:    16:25:11 05/22/2016 
 // Design Name: 
-// Module Name:    SDReader
+// Module Name:    SDReader_new 
 // Project Name: 
 // Target Devices: 
 // Tool versions: 
@@ -20,260 +20,196 @@
 //////////////////////////////////////////////////////////////////////////////////
 module SDReader(
 	reset,
-	clock,
 	start,
 	MISO,
 	CS,
 	SCLK,
 	MOSI,
 	busy,
+	//count_to,
 	fifo_data_in,
 	fifo_push,
+	fifo_empty,
 	LED
     );
 	 
-//---------------------- Define State ----------------------
-	parameter sIDLE = 5'b00000;
-	parameter sSET_SPI_MODE = 5'b00001;
-	parameter sWAIT_SET_SPI_MODE = 5'b00010; 
-	
-	parameter sSEND_CMD0 = 5'b00011;
-	parameter sRESPONSE_CMD0 = 5'b00100;
-	
-	parameter sSEND_CMD1 = 5'b00101;
-	parameter sRESPONSE_CMD1 = 5'b00110;
-	
-	parameter sCHECK = 5'b00111;
-	parameter sSEND_CMD17 = 5'b01000;
-	parameter sRESPONSE_CMD17 = 5'b01001;
-	
-	parameter sWAIT_DATA = 5'b01010;
-	parameter sGET_DATA = 5'b01011;
-	parameter sWAIT_NEXT_CHECK = 5'b01100;
+	 //---------------------- Define State ----------------------
+		parameter sIDLE = 6'b000000;
+		
+		parameter sWAIT_FIFO_EMPTY_CMD17 = 6'b00_0001;
+		parameter sSEND_CMD17 = 6'b00_0010;
+		parameter sRESPONSE_CMD17 = 6'b00_0011;
+		parameter sDATA_CMD17 = 6'b00_0100;
+		parameter sEND_CMD17 = 6'b00_0101;
+		parameter sWAIT_CRC = 6'b00_0110;
+		parameter sSTART_DESE_DATA_CMD17 = 6'b00_0111;
+		parameter sCHECK_RES_CMD17 = 6'b00_1000;
+		
+		parameter sFINAL = 6'b11_1111;
+	//----------------------------------------------------------
 
-	parameter sFINAL = 5'b11111;
-//----------------------------------------------------------
+		parameter startAddress = 32'h0000_0000;		//32 bit
+		parameter bitPerDataPacket = 16'b0001_0000_0000_0000;		//512*8 = 4096 bit per dataPacket
 
-
-	parameter startAddress = 32'h0000_0000;		//32 bit
-	parameter bitPerDataPacket = 16'b0001_0000_0000_0000;		//512*8 = 4096 bit per dataPacket
-
-//---------------------- Input/Output ----------------------
-	input wire reset;
-	input wire clock;
-	input wire start;
-	input wire MISO;
-	output wire CS;
-	output wire SCLK;
-	output wire MOSI;
-	output wire busy;
-	output wire [7:0] fifo_data_in;
-	output wire fifo_push;
+	//---------------------- Input/Output ----------------------
+		input wire reset;
+		input wire start;
+		input wire MISO;
+		input wire fifo_empty;
+		input wire SCLK;
+		//input wire count_to;
+		
+		output wire CS;
+		output wire MOSI;
+		output wire busy;
+		output wire [7:0] fifo_data_in;
+		output wire fifo_push;
 	
-	output wire [7:0]LED;
-//----------------------------------------------------------
+		output wire [7:0]LED;
+	//----------------------------------------------------------
 
-//-------------------------- Wire --------------------------
-	wire d_clock;
+	wire reset_module;
+	wire waiter_count_to;
+	wire waiter_start;
+	wire sendcmd_start;
 	wire sendcmd_busy;
 	wire sendcmd_data_out;
-	wire waiter_busy;
-	
-	wire [7:0] deseres_data_out;
-	wire deseres_busy,deseres_RCO;
+	wire d_clock;
 	wire [7:0] desedata_data_out;
-	wire desedata_busy,desedata_RCO;
-	wire deseres_data_in;
-	wire desedata_data_in;
+	wire desedata_RCO;
+	wire [7:0]deseres_data_out;
+	wire deseres_busy;
+	wire waiter_busy;
+	wire [7:0]count_to; // TOEDIT
 	
-	wire start_PB_state,start_PB_down,start_PB_up;
-	wire reset_PB_state,reset_PB_down,reset_PB_up;
+	wire [7:0]deseres7_data_out;
+	wire deseres7_start;
+	wire deseres7_data_in;
+	wire [31:0] next_address;
+	wire [7:0] next_counter;
 	
-	wire reset_module;
-	wire deseres_start;
-	wire desedata_start;
+	reg [47:0] sendcmd_data_in;
+	reg [5:0] ns;
+	reg [5:0] ps;
+	reg [31:0] address;
+	reg [7:0] counter;
 	
-	wire [19:0] num_DataPacket;
-//----------------------------------------------------------
-
-//-------------------------- Reg ---------------------------
-	reg [4:0] ps;
-	reg [4:0] ns;
+	assign count_to = 1;
 	
-	reg [19:0] count_DataPacket;
-	reg [47:0] sendcmd_data_in;		//CMD Command frame 48bit
-	reg sendcmd_start;
-	reg waiter_start;
-	reg [7:0] waiter_count_to;		   //number of d_clock for wait (max 8 bit)
-	reg [31:0] address;					//address 32bit of SDCard for read
-	
-//----------------------------------------------------------
-
-//------------------------ Assign --------------------------
-	assign MOSI = (sendcmd_busy)? sendcmd_data_out : 1'b1;
-	assign CS = (ps == sSET_SPI_MODE)? 1'b1 : 1'b0;
-	assign SCLK = d_clock;
-	assign busy = (ps == sIDLE)? 1'b0 : 1'b1;
+	assign MOSI = (sendcmd_busy) ? sendcmd_data_out : 1'b1;
+	//assign CS = (ps == sSET_SPI_MODE || ps == sWAIT_SET_SPI_MODE || ps == sSET_CS_HIGH_CMD0 
+	//				|| ps == sSET_CS_HIGH_CMD8 || ps == sSET_CS_HIGH_CMD1 || ps == sSET_CS_HIGH_CMD55 || ps == sSET_CS_HIGH_CMD55) ? 1'b1 : 1'b0;
+	assign CS = 1'b0;
+	assign busy = (ps == sIDLE) ? 1'b0 : 1'b1;
 	
 	assign deseres_data_in = MISO;
-	assign desedata_data_in = MISO;
+	assign desdata_data_in = MISO;
+	//assign deseres7_data_in = MISO;
+	
+	assign deseres_start = (ps == sSEND_CMD17)? 1'b1 : 1'b0;
+	//assign deseres7_start = (ps == sSEND_CMD8 || ps == sSEND_CMD58) ? 1'b1 : 1'b0;
+	assign desedata_start = (ps == sSTART_DESE_DATA_CMD17)? 1'b1 : 1'b0;
+	
+	assign next_address = (sWAIT_CRC) ?  address + 32'h0000_0200 : address ;
+	assign next_counter = (sWAIT_CRC) ?  counter + 1 : counter;
 	
 	assign fifo_data_in = desedata_data_out;
 	assign fifo_push = desedata_RCO;
 	
-	//LED
-	//assign LED = (ps==sRESPONSE_CMD0 && !deseres_busy)? {deseres_data_out[7:0]} : {8'b0110_0110};
-	assign LED = {deseres_data_out[7:0]};
-	assign reset_module = (ps==sIDLE)? 1'b1 : 1'b0;
-	assign deseres_start = (ps == sSEND_CMD0||ps == sSEND_CMD1||ps == sSEND_CMD17)? 1'b1:1'b0;
-	assign desedata_start = (ps == sWAIT_DATA)? 1'b1:1'b0;
+	assign reset_module = (ps == sIDLE) ? 1'b1 : 1'b0;
+	assign waiter_start = (ps == sWAIT_CRC || ps == sSEND_CMD17) ? 1'b1 : 1'b0;
+	assign waiter_count_to = 8'h50;
+	assign sendcmd_start = (ps == sSEND_CMD17) ? 1'b1 : 1'b0;
 	
-	assign num_DataPacket = 16'b0000_0000_0000_1000; // round = Mbyte(from DPSwitch) / 512 Byte //8
-	//assign num_data = 24'b0100_0000_0000_0000;// 0 to 512 * 8 =  4096
-//----------------------------------------------------------
-
-//---------------------- Call Module -----------------------
-	clock_divider #(.IN_FREQ(50),.OUT_FREQ(1))clkdiv(clock,d_clock,reset_PB_down);
-	serializer #(.DATA_WIDTH(48)) sendcmd(sendcmd_busy,sendcmd_data_out,sendcmd_data_in,sendcmd_start,d_clock,reset_module);
-	Waiter #(.COUNTER_SIZE(8)) waiter(waiter_busy,waiter_start,waiter_count_to,d_clock,reset_module);
-	DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,deseres_data_in,d_clock,reset_module); //Deserializer for response1
-	DeserializerWithCounter #(.DATA_LENGTH(4096),.WORD_SIZE(8)) desedata(desedata_data_out,desedata_busy,desedata_RCO,desedata_start,desedata_data_in,d_clock,reset_module); //Deserializer for data block
+	//assign LED =  (ps == sFINAL) ? deseres7_data_out : deseres_data_out;
+	//assign LED =  (ps == sFINAL) ? deseres7_data_out : {2'b11,ps};
+	assign LED =  {start,reset,ps};
+	//assign LED = (ps == sFINAL) ? deseres_data_out : (ps == sRESPONSE_CMD0)? 8'hAA : 8'h66;
+	//assign LED = {deseres_busy,waiter_busy,deseres_data_out[7],ps};
+	//---------------------- Call Module -----------------------
+		serializer #(.DATA_WIDTH(48)) sendcmd(sendcmd_busy,sendcmd_data_out,sendcmd_data_in,sendcmd_start,SCLK,reset_module);
+		Waiter #(.COUNTER_SIZE(8)) waiter(waiter_busy,waiter_start,waiter_count_to,SCLK,reset_module);
+		DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,deseres_data_in,SCLK,reset_module); //Deserializer for response1
+		//DeserializerWithCounter #(.DATA_LENGTH(39),.WORD_SIZE(8)) deseresr7(deseres7_data_out,deseres7_busy,deseres7_RCO,deseres7_start,deseres7_data_in,SCLK,reset_module);
+		DeserializerWithCounter #(.DATA_LENGTH(4096),.WORD_SIZE(8)) desedata(desedata_data_out,desedata_busy,desedata_RCO,desedata_start,desedata_data_in,SCLK,reset_module); //Deserializer for data block
 	
-	PushButton_Debouncer Debouncer(d_clock,start,start_PB_state,start_PB_down,start_PB_up);
-	PushButton_Debouncer Debouncer2(clock,reset,reset_PB_state,reset_PB_down,reset_PB_up);
+	//----------------------------------------------------------
 	
-	//fifo Fifo(fifo_front,fifo_rear,fifo_state,fifo_data_out,fifo_empty,fifo_busy,fifo_full,fifo_data_in,fifo_push,fifo_pop,reset,clock);
-//----------------------------------------------------------
-
-	initial begin
-		ps <= 0;
-		ns <= 0;
-		count_DataPacket <= {20{1'b0}};
-		sendcmd_data_in <= {48{1'b0}};		
-		sendcmd_start <= 1'b0;
-		waiter_start <= 1'b0;
-		waiter_count_to <= {8{1'b0}};
-		address <= {32{1'b0}};
-	end
-	
-	
-	always @ (posedge d_clock or posedge reset_PB_down) begin
-		if(reset_PB_down) begin 
-			ps <= 0;
+	always @(posedge SCLK or posedge reset) begin
+		if(reset) begin
+			counter <= 8'h00;
+			address <= 32'h00_00_00_00;
+			ps <= sIDLE;
 		end
-		else begin	
+		else begin
+			counter <= next_counter;
+			address <= next_address;
 			ps <= ns;
 		end
 	end
-
-	always @( * ) begin
-		case(ps)
-			sIDLE : begin
-			//---------- Reset Value -----------
-				count_DataPacket <= {20{1'b0}};
-				sendcmd_data_in <= {48{1'b0}};		
-				sendcmd_start <= 1'b0;
-				waiter_start <= 1'b0;
-				waiter_count_to <= {8{1'b0}};
-				address <= {32{1'b0}};
-			//-----------------------------------
-				if(start_PB_down) ns <= sSET_SPI_MODE;
-				else ns <= ps;			
-			end
-			sSET_SPI_MODE : begin
-				//use module waiter 74+ d_clock
-				waiter_count_to <= 8'b0101_0000; //80 d_clock
-				waiter_start <= 1'b1;
-				
-				ns <= sWAIT_SET_SPI_MODE;
-			end
-			sWAIT_SET_SPI_MODE : begin
-				waiter_start <= 1'b0;
-				
-				if(waiter_busy) ns <= ps;
-				else ns <= sSEND_CMD0;
-			end
-			sSEND_CMD0 : begin
-				sendcmd_start <= 1'b1;
-				//sendcmd_data_in <= {2'b01,6'b00_0000,{32{1'b0}},7'b000_0000,1'b1}; //CMD0
-				sendcmd_data_in <= {1'b1,7'b010_1001,{32{1'b0}},6'b00_0000,2'b10}; // invert and CRC7 = 0x95
-				//sendcmd_data_in <= {1'b1,7'b000_0000,{32{1'b0}},6'b00_0000,2'b10}; // invert and CRC7 = 0x95
-				
-				ns <= sRESPONSE_CMD0;
-			end
-			sRESPONSE_CMD0 : begin
-				sendcmd_start <= 1'b0;
-				
-				if(deseres_busy) ns <= ps;
-				else ns <= 	sSEND_CMD1;
-			end
-			sSEND_CMD1 : begin
-				sendcmd_start <= 1'b1;
-				sendcmd_data_in <= {2'b01,6'b00_0001,{32{1'b0}},7'b000_0000,1'b1}; //CMD1
-				
-				ns <= sRESPONSE_CMD1;
-			end
-			sRESPONSE_CMD1 : begin
-				sendcmd_start <= 1'b0;
-				
-				if(deseres_busy) ns <= ps;
-				else ns <= 	sCHECK;
-			end
-			sCHECK : begin
-				
-				if(count_DataPacket == num_DataPacket) ns <= sFINAL;//ns <= sIDLE;
-				else ns <= sSEND_CMD17;
-			end
-			sSEND_CMD17 : begin
-				sendcmd_start <= 1'b1;
-				sendcmd_data_in <= {2'b01,6'b01_0001,address,7'b000_0000,1'b1}; //CMD1
-				
-				ns <= sRESPONSE_CMD17;
-			end
-			sRESPONSE_CMD17 : begin
-				sendcmd_start <= 1'b0;
-				
-				if(deseres_busy) ns <= ps;
-				else ns <= 	sWAIT_DATA;
-			end
-			sWAIT_DATA : begin
-				ns <= sGET_DATA;
-			end
-			sGET_DATA : begin
-
-				//if(desedata_RCO) push(desedata_data_out) to FIFO //8bit
-				
-				if(desedata_busy) begin
-					ns <= ps;
-					waiter_start <= waiter_start;
-					waiter_count_to <= waiter_count_to;
+	
+	always @(*) begin
+			case(ps)
+			
+				sIDLE : begin
+					if(start) begin
+						ns <= sWAIT_FIFO_EMPTY_CMD17;
+						//ns <= sFINAL;
+					end
+					else begin
+						ns <= sIDLE;
+					end
 				end
-				else begin
-					ns <= sWAIT_NEXT_CHECK;
-					//use module waiter 16+ d_clock for CRC
-					waiter_count_to <= 8'b0001_1000; //24 d_clock
-					waiter_start <= 1'b1;
-				end
-			end
-			sWAIT_NEXT_CHECK : begin
-				waiter_start <= 1'b0;
 				
-				if(waiter_busy) begin
-					ns <= ps;
+				sWAIT_FIFO_EMPTY_CMD17 : begin
+					if(counter == count_to) 
+						ns <= sFINAL;
+					else if(fifo_empty && !waiter_busy)
+						ns <= sSEND_CMD17;
+					else 
+						ns <= sWAIT_FIFO_EMPTY_CMD17;
 				end
-				else begin
-					ns <= sCHECK;
-					count_DataPacket <= count_DataPacket + 1;
-					address <= address + 32'b0000_0000_0000_0010_0000_0000_0000; //512
+				
+				sSEND_CMD17 : begin
+					ns <= sRESPONSE_CMD17;
 				end
-			end
-			sFINAL : begin
-				//ns <= sIDLE;
-				ns <= sFINAL;
-			end
-			default : begin
-				ns <= sIDLE;
-			end
+				
+				sRESPONSE_CMD17 : begin
+					if(deseres_busy && waiter_busy) ns <=  sRESPONSE_CMD17;
+					else ns <= sCHECK_RES_CMD17;
+				end
+				
+				sCHECK_RES_CMD17 : begin
+					if(deseres_busy) ns <= sSEND_CMD17;
+					else ns <= sSTART_DESE_DATA_CMD17;
+				end
+				
+				sSTART_DESE_DATA_CMD17 : begin
+					ns <= sDATA_CMD17;
+				end
+				
+				sDATA_CMD17 : begin
+					if(desedata_busy) ns <= sDATA_CMD17;
+					else ns <= sWAIT_CRC;
+				end
+				
+				sWAIT_CRC : begin
+					ns <= sWAIT_FIFO_EMPTY_CMD17;
+				end
+				
+				sFINAL : begin
+					ns <= sFINAL;
+				end
+				default : begin
+					ns <= sIDLE;
+				end
+			endcase
+	end
+	
+	always @(*) begin
+		case(ps) 
+			sSEND_CMD17  : sendcmd_data_in <= {48'b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000_0010};
+			default : sendcmd_data_in <= 48'hFFFF_FFFF_FFFF;
 		endcase
 	end
 endmodule
