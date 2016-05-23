@@ -25,7 +25,7 @@ module SDCardInitializer(
 		start,
 		reset,
 		d_clock,
-		MISO,
+		MISO
     );
 	 
 	output wire card_ready;
@@ -76,8 +76,7 @@ module SDCardInitializer(
 		parameter sSET_CS_HIGH_CMD58 = 5'b11010;
 
 		parameter sFINAL = 5'b11111;
-	//----------------------------------------------------------
-	parameter sFINAL = 5'b11111;
+
 	//----------------------------------------------------------
 	
 	//----------------------------------------------------------
@@ -91,7 +90,6 @@ module SDCardInitializer(
 	wire sendcmd_start;
 	wire sendcmd_busy;
 	wire sendcmd_data_out;
-	wire d_clock;
 	wire [7:0] desedata_data_out;
 	wire desedata_RCO;
 	wire [7:0]deseres_data_out;
