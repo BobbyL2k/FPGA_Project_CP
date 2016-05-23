@@ -56,7 +56,7 @@ module fifo(
 	 
 	 parameter DATA_WIDTH = 8;
 	 parameter ADDR_WIDTH = 13;
-	 parameter RAM_DEPTH = 5000;
+	 parameter RAM_DEPTH = 4500;
 	 
 	 //output reg [DATA_WIDTH-1 : 0] data_out;
 	 output wire [DATA_WIDTH-1 : 0] data_out;
@@ -81,6 +81,8 @@ module fifo(
 	 reg [ADDR_WIDTH-1 : 0] rear_addr;
 	 wire [ADDR_WIDTH-1 : 0] front_addr_in;
 	 wire [ADDR_WIDTH-1 : 0] rear_addr_in;
+	 wire [ADDR_WIDTH-1 : 0] next_front_addr;
+	 wire [ADDR_WIDTH-1 : 0] next_rear_addr;
 	 wire [DATA_WIDTH-1 : 0] mem_in;
 	 reg [ADDR_WIDTH-1 : 0] data_count_in;
      //wire [ADDR_WIDTH-1 : 0] next_rear_addr;
@@ -90,27 +92,12 @@ module fifo(
 	 assign empty = (rear_addr == front_addr) ? 1'b1 : 1'b0;
 	 assign full = (rear_addr+1 == front_addr) ? 1'b1 : 1'b0;
 	 assign busy = (poping == 1'b0 && pushing == 2'b00) ? 1'b0 : 1'b1;
-	 assign front_addr_in = (poping) ? front_addr + 1 : front_addr;
-	 assign rear_addr_in = (pushing == 2'b10) ? rear_addr + 1: rear_addr ;
+	 assign front_addr_in = (poping) ? next_front_addr : front_addr;
+	 assign rear_addr_in = (pushing == 2'b10) ? next_rear_addr : rear_addr ;
+	 assign next_front_addr = (front_addr == 4450) ? {ADDR_WIDTH{1'b0}} : front_addr + 1;
+	 assign next_rear_addr = (rear_addr == 4450) ? {ADDR_WIDTH{1'b0}} : rear_addr + 1;
 	 assign mem_in = (pushing == 2'b01) ? data_in : mem[rear_addr];
-	//  wire ENA,ENB,WEA,WEB;
-	//  assign ENA = 1'b1;
-	//  assign ENB = 1'b0;
-	//  assign WEA = 0;
-	//  assign WEB = (pushing) ? 1'b1 : 1'b0;
-	 	 
-	//  assign pushing = (ps == 4'b1001 || ps == 4'b1000 || ps == 4'b1100 || ps == 4'b1101) ? 1'b1 : 1'b0;
-	//  assign poping = (ps == 4'b0001 || ps == 4'b1100 ) ? 1'b1 : 1'b0;
-	//  assign empty = (rear_addr == front_addr) ? 1'b1 : 1'b0;
-	//  assign full = (next_rear_addr == front_addr) ? 1'b1 : 1'b0;
-	//  assign busy = (pushing || poping) ? 1'b1 : 1'b0;
-	//  assign rear_addr_in = (ps == 4'b1001 || ps == 4'b1101) ? next_rear_addr : rear_addr;
-	//  assign front_addr_in = (ps == 4'b0001 || ps == 4'b1100) ? next_front_addr : front_addr; 
-	//  assign next_rear_addr = (rear_addr == 4900) ? {DATA_WIDTH{1'b0}} :  rear_addr + 1;
-	//  assign next_front_addr = (front_addr == 4900) ? {DATA_WIDTH{1'b0}} :  front_addr + 1;
-	 
-	 //DualPortRam #(.ADDR_WIDTH(ADDR_WIDTH)) ram(clock,front_addr,data_out,WEA,ENA,rear_addr,data_in,WEB,ENB);
-	 
+
 	initial begin
 		poping = 0;
 		pushing = 0;
