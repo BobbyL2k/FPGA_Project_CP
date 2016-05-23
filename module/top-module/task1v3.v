@@ -1,6 +1,6 @@
 `include "../PushButton_Debouncer/PushButton_Debouncer.v"
 `include "../single_pulser/single_pulser.v"
-`include "../uart2/uart.v"
+`include "../uart3/uart.v"
 `include "../interfpga/interfpga.v"
 `include "../crc8/crc8.v"
 `include "../digi/digit.v"
@@ -69,15 +69,15 @@ module task1_pc_from_to_fpga_crcfpga(
     );
 
   uart_receiver #(
-    .FULL_buad(2553),
-	 .HALF_buad(200))
+    .bitDepth(11),
+	 .adder(151))
     uartR(
-      .o_8_data(io_8_uart_data),
-      .o_ready(uart_data_ready),
-      .i_clear_ready(sp_uart_data_ready),
-      .i_rx(i_rx_fpga),
-      .i_reset(db_reset),
-      .i_clk(clk)
+      .data(io_8_uart_data),
+      .data_ready(uart_data_ready),
+      //.i_clear_ready(sp_uart_data_ready),
+      .rx(i_rx_fpga),
+      .nrst(~db_reset),
+      .clk(clk)
     );
 
   crc 
@@ -189,16 +189,16 @@ module task1_pc_from_to_fpga_crcpc(
       .reset(db_reset)
     );
 
-  uart_receiver  #(
-    .FULL_buad(2843),
-	 .HALF_buad(625))
+  uart_receiver #(
+    .bitDepth(11),
+	 .adder(170))
     uartR(
-      .o_8_data(io_8_uart_data),
-      .o_ready(uart_data_ready),
-      .i_clear_ready(sp_uart_data_ready),
-      .i_rx(i_rx_pc),
-      .i_reset(db_reset),
-      .i_clk(clk)
+      .data(io_8_uart_data),
+      .data_ready(uart_data_ready),
+      //.i_clear_ready(sp_uart_data_ready),
+      .rx(i_rx_pc),
+      .nrst(~db_reset),
+      .clk(clk)
     );
 
   crc 
