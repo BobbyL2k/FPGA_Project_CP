@@ -4,6 +4,164 @@
 `include "../interfpga/interfpga.v"
 `include "../crc8/crc8.v"
 
+module task1_pc_from_to_fpga_crcfpga(
+  // System
+  input wire clk,
+  // interfpga
+  input wire i_rx_fpga,
+  output wire o_tx_fpga,
+  // serial port
+  input wire i_rx_pc,
+  output wire o_tx_pc,
+  // crc8
+  output wire [7:0] o_8_crc8,
+  // push button
+  input wire pb_reset,
+  input wire pb_start,
+  input wire pb_debug
+);
+
+  assign o_tx_pc = i_rx_fpga;
+  assign o_tx_fpga = i_rx_pc;
+
+  // Vars
+  
+  wire 
+    db_reset,
+    db_start,
+    db_debug,
+    uart_data_ready,
+    sp_uart_data_ready;
+  wire [7:0]
+    io_8_uart_data;
+
+  // Modules
+  
+  PushButton_Debouncer
+    reset_db(
+      .clk(clk),
+      .PB(pb_reset),
+      .PB_state(db_reset)
+    ),
+    start_db(
+      .clk(clk),
+      .PB(pb_start),
+      .PB_state(db_start) // unpluged
+    ),
+    debug_db(
+      .clk(clk),
+      .PB(pb_debug),
+      .PB_state(db_debug) // unpluged
+    );
+    
+  single_pulser
+    uart_data_ready_sp(
+      .signal_in(uart_data_ready),
+      .signal_out(sp_uart_data_ready),
+      .clk(clk),
+      .reset(db_reset)
+    );
+
+  uart_receiver 
+    uartR(
+      .o_8_data(io_8_uart_data),
+      .o_ready(uart_data_ready),
+      .i_clear_ready(sp_uart_data_ready),
+      .i_rx(i_rx_fpga),
+      .i_reset(db_reset),
+      .i_clk(clk)
+    );
+
+  crc 
+    crc_module(
+      .data_in(io_8_uart_data),
+      .crc_en(sp_uart_data_ready),
+      .crc_out(o_8_crc8),
+      .rst(db_reset),
+      .clk(clk)
+    );
+
+endmodule // task1_pc_from_to_fpga
+
+module task1_pc_from_to_fpga_crcpc(
+  // System
+  input wire clk,
+  // interfpga
+  input wire i_rx_fpga,
+  output wire o_tx_fpga,
+  // serial port
+  input wire i_rx_pc,
+  output wire o_tx_pc,
+  // crc8
+  output wire [7:0] o_8_crc8,
+  // push button
+  input wire pb_reset,
+  input wire pb_start,
+  input wire pb_debug
+);
+
+  assign o_tx_pc = i_rx_fpga;
+  assign o_tx_fpga = i_rx_pc;
+
+  // Vars
+  
+  wire 
+    db_reset,
+    db_start,
+    db_debug,
+    uart_data_ready,
+    sp_uart_data_ready;
+  wire [7:0]
+    io_8_uart_data;
+
+  // Modules
+  
+  PushButton_Debouncer
+    reset_db(
+      .clk(clk),
+      .PB(pb_reset),
+      .PB_state(db_reset)
+    ),
+    start_db(
+      .clk(clk),
+      .PB(pb_start),
+      .PB_state(db_start) // unpluged
+    ),
+    debug_db(
+      .clk(clk),
+      .PB(pb_debug),
+      .PB_state(db_debug) // unpluged
+    );
+    
+  single_pulser
+    uart_data_ready_sp(
+      .signal_in(uart_data_ready),
+      .signal_out(sp_uart_data_ready),
+      .clk(clk),
+      .reset(db_reset)
+    );
+
+  uart_receiver 
+    uartR(
+      .o_8_data(io_8_uart_data),
+      .o_ready(uart_data_ready),
+      .i_clear_ready(sp_uart_data_ready),
+      .i_rx(i_rx_pc),
+      .i_reset(db_reset),
+      .i_clk(clk)
+    );
+
+  crc 
+    crc_module(
+      .data_in(io_8_uart_data),
+      .crc_en(sp_uart_data_ready),
+      .crc_out(o_8_crc8),
+      .rst(db_reset),
+      .clk(clk)
+    );
+
+endmodule // task1_pc_from_to_fpga
+
 module task1_pc2fpga(
   // System
   input wire clk,
