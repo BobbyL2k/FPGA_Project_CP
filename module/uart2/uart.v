@@ -10,7 +10,7 @@ module uart_receiver(
   i_clk
 );
 
-  parameter FULL_buad = 1302;
+  parameter FULL_buad = 2603;
   parameter HALF_buad =  652;
 
   input wire i_clk;
@@ -129,8 +129,12 @@ module uart_transmitter(
 );
 
   parameter number_of_bits = 8;
-  parameter IN_FREQ = 20;
-  parameter OUT_FREQ = 1;
+  // Real World
+  parameter IN_FREQ = 220052; // Expected internal clock frequncy
+  parameter OUT_FREQ = 96;    // Baud Rate
+  // Simulation
+  // parameter IN_FREQ = 20;
+  // parameter OUT_FREQ = 1;
   
   input wire [number_of_bits-1:0] data; // w/o parity
   output wire busy;
