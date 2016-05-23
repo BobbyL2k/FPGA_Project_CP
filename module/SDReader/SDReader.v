@@ -143,7 +143,7 @@ module SDReader(
 	always @(posedge SCLK or posedge reset) begin
 		if(reset) begin
 			counter <= 8'h00;
-			address <= 32'h00_00_00_00;
+			address <= 32'h00_F0_00_00;
 			ps <= sIDLE;
 		end
 		else begin
