@@ -79,15 +79,17 @@ module fifo(
 	 reg [ADDR_WIDTH-1 : 0] rear_addr;
 	 wire [ADDR_WIDTH-1 : 0] front_addr_in;
 	 wire [ADDR_WIDTH-1 : 0] rear_addr_in;
+	 wire [DATA_WIDTH-1 : 0] mem_in;
      //wire [ADDR_WIDTH-1 : 0] next_rear_addr;
      //wire [ADDR_WIDTH-1 : 0] next_front_addr;
 	 
+	 assign data_out = mem[front_addr];
 	 assign empty = (rear_addr == front_addr) ? 1'b1 : 1'b0;
 	 assign full = (rear_addr+1 == front_addr) ? 1'b1 : 1'b0;
 	 assign busy = (poping == 1'b0 && pushing == 2'b00) ? 1'b0 : 1'b1;
 	 assign front_addr_in = (poping) ? front_addr + 1 : front_addr;
-	 assign rear_addr_in = (pusing == 1'b10) ? rear_addr + 1: rear_addr ;
-	 assign mem_in = (push) ? data_in : mem[rear_addr];
+	 assign rear_addr_in = (pushing == 2'b10) ? rear_addr + 1: rear_addr ;
+	 assign mem_in = (pushing == 2'b01) ? data_in : mem[rear_addr];
 	 
 	//  wire ENA,ENB,WEA,WEB;
 	//  assign ENA = 1'b1;
@@ -117,17 +119,17 @@ module fifo(
 	always @(posedge clock or posedge reset) begin
 		if(reset) begin
 			poping <= 1'b0;
-			pusing <= 2'b00;
+			pushing <= 2'b00;
 			front_addr <= {ADDR_WIDTH{1'b0}};
 			rear_addr <= {ADDR_WIDTH{1'b0}};
-			mem[rear] <= 8'h00;
+			mem[rear_addr] <= 8'h00;
 		end
 		else begin
 			poping <= poping_ns;
 			pushing <= pushing_ns;
 			front_addr <= front_addr_in;
 			rear_addr <= rear_addr_in;
-			mem[rear] <= mem_in;
+			mem[rear_addr] <= mem_in;
 		end
 	end
 	
@@ -135,7 +137,7 @@ module fifo(
 		case(pushing)
 			2'b00 : begin
 				if(push && !full) pushing_ns <= 2'b01;
-				else pusing_ns <= 2'b00;
+				else pushing_ns <= 2'b00;
 			end
 			2'b01 : begin
 				pushing_ns <= 2'b10;
@@ -143,7 +145,7 @@ module fifo(
 			2'b10 : begin
 				pushing_ns <= 2'b00;
 			end
-			default : pusing_ns <= 2'b00;
+			default : pushing_ns <= 2'b00;
 		endcase
 	end
 	
@@ -156,7 +158,7 @@ module fifo(
 			1'b1 : begin
 				poping_ns <= 1'b0;
 			end
-			default : popping_ns <= 1'b0;
+			default : poping_ns <= 1'b0;
 		endcase
 	end
 
