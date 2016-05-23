@@ -3,6 +3,7 @@
 `include "../uart2/uart.v"
 `include "../interfpga/interfpga.v"
 `include "../crc8/crc8.v"
+`include "../digi/digit.v"
 
 module task1_pc_from_to_fpga_crcfpga(
   // System
@@ -87,8 +88,8 @@ module task1_pc_from_to_fpga_crcfpga(
       .clk(clk)
     );
 	 
-  digi
-    digi_module(
+  digit
+    digit_module(
 	   clk,
 		{data_counter, o_8_crc8},
 		dg,
@@ -192,8 +193,8 @@ module task1_pc_from_to_fpga_crcpc(
       .clk(clk)
     );
 
-  digi
-    digi_module(
+  digit
+    digit_module(
 	   clk,
 		{data_counter, o_8_crc8},
 		dg,
