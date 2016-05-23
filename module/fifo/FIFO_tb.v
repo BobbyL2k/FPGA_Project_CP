@@ -28,6 +28,7 @@ module FIFO_tb(
     reg pop;
     reg reset;
     reg clock;
+    wire [12:0] data_count;
     wire [7:0] data_out;
     wire empty;
     wire busy;
@@ -35,7 +36,7 @@ module FIFO_tb(
     wire [3:0] state;
     wire [9:0] rear;
     wire [9:0] front;
-    fifo ff(data_out,empty,busy,full,data_in,push,pop,reset,clock);
+    fifo ff(data_count,data_out,empty,busy,full,data_in,push,pop,reset,clock);
          
     initial begin
         $dumpfile("dump.vcd");
@@ -54,7 +55,9 @@ module FIFO_tb(
         #40 push =0;
         #100 data_in = 8'h91;
         #20 push = 1;
+            pop = 1;
         #40 push = 0;
+            pop = 0;
         #100 pop = 1;
         #40 pop = 0;
         #100 pop = 1;

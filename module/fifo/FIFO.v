@@ -42,6 +42,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module fifo(
+		data_count,
 		data_out,
 		empty,
 		busy,
@@ -62,6 +63,7 @@ module fifo(
 	 output wire empty;
 	 output wire busy; // pushing data;
 	 output wire full;
+	 output reg [ADDR_WIDTH-1 : 0]data_count;
 	 
 	 input wire [DATA_WIDTH-1 : 0] data_in;
 	 input wire push;
@@ -80,6 +82,7 @@ module fifo(
 	 wire [ADDR_WIDTH-1 : 0] front_addr_in;
 	 wire [ADDR_WIDTH-1 : 0] rear_addr_in;
 	 wire [DATA_WIDTH-1 : 0] mem_in;
+	 reg [ADDR_WIDTH-1 : 0] data_count_in;
      //wire [ADDR_WIDTH-1 : 0] next_rear_addr;
      //wire [ADDR_WIDTH-1 : 0] next_front_addr;
 	 
@@ -90,7 +93,6 @@ module fifo(
 	 assign front_addr_in = (poping) ? front_addr + 1 : front_addr;
 	 assign rear_addr_in = (pushing == 2'b10) ? rear_addr + 1: rear_addr ;
 	 assign mem_in = (pushing == 2'b01) ? data_in : mem[rear_addr];
-	 
 	//  wire ENA,ENB,WEA,WEB;
 	//  assign ENA = 1'b1;
 	//  assign ENB = 1'b0;
@@ -123,6 +125,7 @@ module fifo(
 			front_addr <= {ADDR_WIDTH{1'b0}};
 			rear_addr <= {ADDR_WIDTH{1'b0}};
 			mem[rear_addr] <= 8'h00;
+			data_count <= 13'b0_0000_0000_0000;
 		end
 		else begin
 			poping <= poping_ns;
@@ -130,6 +133,7 @@ module fifo(
 			front_addr <= front_addr_in;
 			rear_addr <= rear_addr_in;
 			mem[rear_addr] <= mem_in;
+			data_count <= data_count_in;
 		end
 	end
 	
@@ -160,6 +164,13 @@ module fifo(
 			end
 			default : poping_ns <= 1'b0;
 		endcase
+	end
+	
+	always @(*) begin
+		if(pushing == 2'b01 && poping == 1'b1) data_count_in <= data_count;
+		else if(pushing == 2'b01) data_count_in <= data_count + 1;
+		else if(poping == 1'b1) data_count_in <= data_count - 1;
+		else data_count_in <= data_count;
 	end
 
 endmodule
