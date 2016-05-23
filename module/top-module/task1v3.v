@@ -18,7 +18,9 @@ module task1_pc_from_to_fpga_crcfpga(
   // push button
   input wire pb_reset,
   input wire pb_start,
-  input wire pb_debug
+  input wire pb_debug,
+  // 7seg
+  output wire [10:0] dg
 );
 
   assign o_tx_pc = i_rx_fpga;
@@ -34,6 +36,8 @@ module task1_pc_from_to_fpga_crcfpga(
     sp_uart_data_ready;
   wire [7:0]
     io_8_uart_data;
+  reg [7:0]
+    data_counter;
 
   // Modules
   
@@ -62,7 +66,9 @@ module task1_pc_from_to_fpga_crcfpga(
       .reset(db_reset)
     );
 
-  uart_receiver 
+  uart_receiver #(
+    .FULL_buad(2603),
+	 .HALF_buad(200))
     uartR(
       .o_8_data(io_8_uart_data),
       .o_ready(uart_data_ready),
@@ -80,6 +86,26 @@ module task1_pc_from_to_fpga_crcfpga(
       .rst(db_reset),
       .clk(clk)
     );
+	 
+  digi
+    digi_module(
+	   clk,
+		{data_counter, o_8_crc8},
+		dg,
+		~db_reset
+    );
+	 
+	 always @( posedge clk or posedge db_reset ) begin
+		if( db_reset ) begin
+		  data_counter = 0;
+		end else begin
+		  if( sp_uart_data_ready ) begin
+			 data_counter = data_counter + 1;
+		  end else begin
+			 data_counter = data_counter;
+		  end
+		end
+	 end
 
 endmodule // task1_pc_from_to_fpga
 
@@ -97,7 +123,9 @@ module task1_pc_from_to_fpga_crcpc(
   // push button
   input wire pb_reset,
   input wire pb_start,
-  input wire pb_debug
+  input wire pb_debug,
+  // 7seg
+  output wire [10:0] dg
 );
 
   assign o_tx_pc = i_rx_fpga;
@@ -113,6 +141,8 @@ module task1_pc_from_to_fpga_crcpc(
     sp_uart_data_ready;
   wire [7:0]
     io_8_uart_data;
+  reg [7:0]
+    data_counter;
 
   // Modules
   
@@ -141,7 +171,9 @@ module task1_pc_from_to_fpga_crcpc(
       .reset(db_reset)
     );
 
-  uart_receiver 
+  uart_receiver  #(
+    .FULL_buad(2603),
+	 .HALF_buad(200))
     uartR(
       .o_8_data(io_8_uart_data),
       .o_ready(uart_data_ready),
@@ -159,6 +191,26 @@ module task1_pc_from_to_fpga_crcpc(
       .rst(db_reset),
       .clk(clk)
     );
+
+  digi
+    digi_module(
+	   clk,
+		{data_counter, o_8_crc8},
+		dg,
+		~db_reset
+    );
+	 
+	 always @( posedge clk or posedge db_reset ) begin
+		if( db_reset ) begin
+		  data_counter = 0;
+		end else begin
+		  if( sp_uart_data_ready ) begin
+			 data_counter = data_counter + 1;
+		  end else begin
+			 data_counter = data_counter;
+		  end
+		end
+	 end
 
 endmodule // task1_pc_from_to_fpga
 
