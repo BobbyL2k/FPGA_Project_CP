@@ -42,9 +42,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module fifo(
-        front,
-        rear,
-        state,
 		data_out,
 		empty,
 		busy,
@@ -57,16 +54,13 @@ module fifo(
     );
 	 
 	 parameter DATA_WIDTH = 8;
-	 parameter ADDR_WIDTH = 10;
+	 parameter ADDR_WIDTH = 13;
 	 
 	 //output reg [DATA_WIDTH-1 : 0] data_out;
 	 output wire [DATA_WIDTH-1 : 0] data_out;
 	 output wire empty;
 	 output wire busy; // pushing data;
 	 output wire full;
-	 output wire [3:0] state;
-	 output wire [9:0] rear;
-	 output wire [9:0] front;
 	 
 	 input wire [DATA_WIDTH-1 : 0] data_in;
 	 input wire push;
@@ -86,6 +80,7 @@ module fifo(
      wire [DATA_WIDTH-1 : 0] DIB;
      wire [ADDR_WIDTH-1 : 0]next_rear_addr;
      wire [ADDR_WIDTH-1 : 0]next_front_addr;
+	 wire pushing;
 	
 	 
 	 wire  
@@ -131,7 +126,7 @@ module fifo(
 	 assign rear = rear_addr;
 	 assign front = front_addr;
 	 
-	 DualPortRam ram(clock,front_addr,data_out,WEA,ENA,rear_addr,data_in,WEB,ENB);
+	 DualPortRam #(.ADDR_WIDTH(ADDR_WIDTH)) ram(clock,front_addr,data_out,WEA,ENA,rear_addr,data_in,WEB,ENB);
 	 
 	initial begin
 		ps = 0;

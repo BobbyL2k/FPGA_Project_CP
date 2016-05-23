@@ -30,6 +30,7 @@ module SDReader(
 	fifo_data_in,
 	fifo_push,
 	fifo_empty,
+	fifo_available,
 	LED
     );
 	 
@@ -59,6 +60,7 @@ module SDReader(
 		input wire SCLK;
 		//input wire count_to;
 		
+		output wire fifo_available;
 		output wire CS;
 		output wire MOSI;
 		output wire busy;
@@ -94,7 +96,7 @@ module SDReader(
 	reg [31:0] address;
 	reg [7:0] counter;
 	
-	assign count_to = 1;
+	assign count_to = 10;
 	
 	assign MOSI = (sendcmd_busy) ? sendcmd_data_out : 1'b1;
 	//assign CS = (ps == sSET_SPI_MODE || ps == sWAIT_SET_SPI_MODE || ps == sSET_CS_HIGH_CMD0 
@@ -110,11 +112,13 @@ module SDReader(
 	//assign deseres7_start = (ps == sSEND_CMD8 || ps == sSEND_CMD58) ? 1'b1 : 1'b0;
 	assign desedata_start = (ps == sSTART_DESE_DATA_CMD17)? 1'b1 : 1'b0;
 	
-	assign next_address = (sWAIT_CRC) ?  address + 32'h0000_0200 : address ;
-	assign next_counter = (sWAIT_CRC) ?  counter + 1 : counter;
+	assign next_address = (ps == sWAIT_CRC) ?  address + 32'h0000_0200 : address ;
+	assign next_counter = (ps == sWAIT_CRC) ?  counter + 1 : counter;
 	
-	assign fifo_data_in = desedata_data_out;
+	assign fifo_data_in = 8'b0110_1010;
+	//assign fifo_data_in = desedata_data_out;
 	assign fifo_push = desedata_RCO;
+	assign fifo_available = (ps==sSEND_CMD17 ||ps==sRESPONSE_CMD17||ps==sCHECK_RES_CMD17||ps==sSTART_DESE_DATA_CMD17||ps==sDATA_CMD17||ps==sWAIT_CRC) ? 1'b0 : 1'b1;
 	
 	assign reset_module = (ps == sIDLE) ? 1'b1 : 1'b0;
 	assign waiter_start = (ps == sWAIT_CRC || ps == sSEND_CMD17) ? 1'b1 : 1'b0;
@@ -123,7 +127,8 @@ module SDReader(
 	
 	//assign LED =  (ps == sFINAL) ? deseres7_data_out : deseres_data_out;
 	//assign LED =  (ps == sFINAL) ? deseres7_data_out : {2'b11,ps};
-	assign LED =  {start,reset,ps};
+	assign LED = desedata_data_out;
+	//assign LED =  {fifo_empty,waiter_busy,ps};
 	//assign LED = (ps == sFINAL) ? deseres_data_out : (ps == sRESPONSE_CMD0)? 8'hAA : 8'h66;
 	//assign LED = {deseres_busy,waiter_busy,deseres_data_out[7],ps};
 	//---------------------- Call Module -----------------------
@@ -201,7 +206,7 @@ module SDReader(
 					ns <= sFINAL;
 				end
 				default : begin
-					ns <= sIDLE;
+					ns <= sFINAL;
 				end
 			endcase
 	end

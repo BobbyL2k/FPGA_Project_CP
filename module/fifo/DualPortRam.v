@@ -30,7 +30,7 @@ module DualPortRam  (clk,
   we_1,
   oe_1);
   parameter DATA_WIDTH = 8;
-  parameter ADDR_WIDTH = 8;
+  parameter ADDR_WIDTH = 13;
   parameter RAM_DEPTH = 1 << ADDR_WIDTH;
 
   input clk;
