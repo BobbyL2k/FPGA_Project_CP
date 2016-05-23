@@ -77,9 +77,9 @@ module TopModule_SDCardInitailizer(
 		wire [7:0] fifo_data_out;
 		wire fifo_full;
 		
-		wire [7:0] dummy;
+		//wire [7:0] dummy;
 		
-		assign dummy = 8'b1000_1110;
+		//assign dummy = 8'b1000_1110;
 		//assign dummy = fifo_data_out;
 		
 		reg [4:0] ns;
@@ -110,7 +110,7 @@ module TopModule_SDCardInitailizer(
 		parameter IN_FREQ = 220052; // Expected internal clock frequncy
 		parameter OUT_FREQ = 96;    // Baud Rate
 		
-		uart_transmitter #(.IN_FREQ(IN_FREQ),.OUT_FREQ(OUT_FREQ)) uartTransmitter(dummy,uart_transmitter_busy,uart_transmitter_send,tx_o,reset_PB_down,clock);
+		uart_transmitter #(.IN_FREQ(IN_FREQ),.OUT_FREQ(OUT_FREQ)) uartTransmitter(fifo_data_out,uart_transmitter_busy,uart_transmitter_send,tx_o,reset_PB_down,clock);
 		single_pulser fifo_push_sp(fifo_push,sp_fifo_push,clock,reset_PB_down);
 		single_pulser fifo_pop_sp(fifo_pop,sp_fifo_pop,clock,reset_PB_down);
 		fifo #(.ADDR_WIDTH(10)) Fifo(

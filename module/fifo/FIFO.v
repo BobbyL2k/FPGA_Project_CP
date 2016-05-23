@@ -91,8 +91,8 @@ module fifo(
 	 assign busy = (pushing || poping) ? 1'b1 : 1'b0;
 	 assign rear_addr_in = (ps == 4'b1001 || ps == 4'b1101) ? next_rear_addr : rear_addr;
 	 assign front_addr_in = (ps == 4'b0001 || ps == 4'b1100) ? next_front_addr : front_addr; 
-	 assign next_rear_addr = (rear == 4900) ? {DATA_WIDTH{1'b0}} :  rear_addr + 1;
-	 assign next_front_addr = (front == 4900) ? {DATA_WIDTH{1'b0}} :  front_addr + 1;
+	 assign next_rear_addr = (rear_addr == 4900) ? {DATA_WIDTH{1'b0}} :  rear_addr + 1;
+	 assign next_front_addr = (front_addr == 4900) ? {DATA_WIDTH{1'b0}} :  front_addr + 1;
 	 
 	 DualPortRam #(.ADDR_WIDTH(ADDR_WIDTH)) ram(clock,front_addr,data_out,WEA,ENA,rear_addr,data_in,WEB,ENB);
 	 
