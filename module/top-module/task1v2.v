@@ -90,3 +90,57 @@ module uart_pc_2_pc(
     );
 
 endmodule // uart_pc_2_pc
+
+module uart_pc_2_fpga_led(
+  input wire clk,
+  input wire rx,
+  output wire tx,
+  input wire reset,
+  output wire [7:0] led
+);
+
+  PushButton_Debouncer reset_db(
+      .clk(clock),
+      .PB(reset),
+      .PB_state(db_reset)
+	  );
+    
+  single_pulser reset_ready_sp(
+    .signal_in(data_ready),
+    .signal_out(tr_reset_ready),
+    .clk(clock),
+    .reset(db_reset)
+  );
+  
+  reg [7:0] c_led_data, n_led_data;
+  wire [7:0] data;
+  
+  always @( posedge clk or posedge db_reset ) begin
+    if( db_reset ) begin
+      c_led_data = 8'b0000_0000;
+    end else begin
+      c_led_data = n_led_data;
+    end
+  end
+  
+  always @( * ) begin
+    if( data_ready ) begin
+      n_led_data = data;
+    end else begin
+      n_led_data = c_led_data;
+    end
+  end
+	
+  uart_receiver #(
+      .HALF_buad(650),
+      .FULL_buad(1302)) 
+    uartr(
+      .o_8_data(data),
+      .o_ready(data_ready),
+      .i_clear_ready(tr_reset_ready),
+      .i_rx(rx),
+      .i_reset(db_reset),
+      .i_clk(clock)
+    );
+
+endmodule // uart_pc_2_fpga_led
