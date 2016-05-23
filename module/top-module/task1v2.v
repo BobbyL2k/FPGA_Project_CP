@@ -102,9 +102,9 @@ module uart_pc_2_fpga_led(
   output wire [3:0] segSelect
 );
 
-  wire data_ready, tr_busy, db_reset, ut_busy;
+  wire data_ready, db_reset;
   reg data_tr;
-  assign led = {data_ready, tr_busy, data_tr, ut_busy, 5'b1010};
+  assign led = {data_ready, data_tr, 6'b1111_11};
 
   PushButton_Debouncer reset_db(
       .clk(clk),
@@ -112,12 +112,7 @@ module uart_pc_2_fpga_led(
       .PB_state(db_reset)
 	  );
     
-  single_pulser busy_sp(
-    .signal_in(ut_busy),
-    .signal_out(tr_busy),
-    .clk(clk),
-    .reset(db_reset)
-  ), ready_sp(
+  single_pulser ready_sp(
     .signal_in(data_ready),
     .signal_out(tr_ready),
     .clk(clk),
@@ -128,7 +123,7 @@ module uart_pc_2_fpga_led(
     if( db_reset ) begin
       data_tr = 1'b0;
     end else begin
-      if( tr_busy )
+      if( tr_ready )
         data_tr = ~data_tr;
       else
         data_tr = data_tr;
@@ -138,11 +133,11 @@ module uart_pc_2_fpga_led(
   wire [7:0] dataR;
   wire [7:0] data;
   assign dataR = {data[0],data[1],data[2],data[3],
-						      data[4],data[5],data[6],data[0]};
+						      data[4],data[5],data[6],data[7]};
   
   uart_receiver #(
-      .HALF_buad(651),
-      .FULL_buad(2603)) 
+      .HALF_buad(250),
+      .FULL_buad(2703)) 
     uartr(
       .o_8_data(data),
       .o_ready(data_ready),
@@ -153,22 +148,11 @@ module uart_pc_2_fpga_led(
     );
 	 
   
-  parameter IN_FREQ = 220052; // Expected internal clock frequncy
+  //parameter IN_FREQ = 220052; // Expected internal clock frequncy
   //parameter IN_FREQ = 250000; // Expected internal clock frequncy
-  parameter OUT_FREQ = 96;    // Baud Rate
+  //parameter OUT_FREQ = 96;    // Baud Rate
   
-  //assign tx = 1'b1;
-  uart_transmitter #(
-      .IN_FREQ(IN_FREQ),
-      .OUT_FREQ(OUT_FREQ)) 
-    uartt(
-      .data(dataR),
-      .busy(ut_busy),
-      .send(data_ready),
-      .tx_o(tx),
-      .reset(db_reset),
-      .clk(clk)
-    );
+  assign tx = 1'b1;
     	 
   reg [4:0] c_segSelect_msb;
 	 
