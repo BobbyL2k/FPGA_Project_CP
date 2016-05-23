@@ -69,7 +69,7 @@ module task1_pc_from_to_fpga_crcfpga(
     );
 
   uart_receiver #(
-    .FULL_buad(2603),
+    .FULL_buad(2553),
 	 .HALF_buad(200))
     uartR(
       .o_8_data(io_8_uart_data),
