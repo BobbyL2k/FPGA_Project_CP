@@ -71,7 +71,7 @@ module uart_receiver(
   end
   
   always @( * ) begin
-    if( c_state == sParity && timer == FULL_buad )
+    if( c_state == sParity && timer >= FULL_buad )
       n_ready = sReady;
     else
       n_ready = c_ready;
@@ -79,7 +79,7 @@ module uart_receiver(
   
   // next state data
   always @( * ) begin
-    if( c_state[3] == sData && timer == FULL_buad ) begin
+    if( c_state[3] == sData && timer >= FULL_buad ) begin
       n_8_data[0] = i_rx;
       n_8_data[7:1] = c_8_data[6:0];
     end else begin
@@ -92,13 +92,13 @@ module uart_receiver(
     if( c_state == sStop && i_rx == START_BIT ) begin
       n_state = sStart;
       reset_timer = 1'b1;
-    end else if( c_state == sStart && timer == HALF_buad ) begin
+    end else if( c_state == sStart && timer >= HALF_buad ) begin
       n_state = sData;
       reset_timer = 1'b1;
-    end else if( c_state[3] == sData && timer == FULL_buad ) begin
+    end else if( c_state[3] == sData && timer >= FULL_buad ) begin
       n_state = c_state + 1;
       reset_timer = 1'b1;
-    end else if( c_state == sParity && timer == FULL_buad ) begin
+    end else if( c_state == sParity && timer >= FULL_buad ) begin
       n_state = sStop;
       reset_timer = 1'b1;
     end else begin
