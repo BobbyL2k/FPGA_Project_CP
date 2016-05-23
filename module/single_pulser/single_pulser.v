@@ -14,7 +14,7 @@ reg [1:0] c_state, n_state;
 
 assign signal_out = c_state[0];
 
-always @( posedge clk or reset ) begin
+always @( posedge clk or posedge reset ) begin
   if( reset ) begin
     c_state = sLow;
   end else begin

@@ -39,7 +39,7 @@ module task1_test();
 
 endmodule // task1_test
 
-module task1_img_pc2pc_test();
+module uart_pc_2_pc_test();
 
   reg [7:0] pc_data;
   wire _pc_busy, _pc_tx, _pc_rx;
@@ -52,17 +52,19 @@ module task1_img_pc2pc_test();
     .data(pc_data),
     .busy(_pc_busy),
     .send(pc_send),
-    .tx_o(pc_tx),
+    .tx_o(_pc_tx),
     .reset(pc_reset),
     .clk(pc_clk)
   );
   
-  task1_imaginary_pc_to_pc uart_pc2pc(
-    .fpga1_clk(fpga1_clk),
-    .fpga2_clk(fpga2_clk),
-    .rx(pc_tx),
+  uart_pc_2_pc #(
+    .IN_FREQ(20),
+    .OUT_FREQ(1)
+  )uartpc2pc(
+    .clk(fpga1_clk),
+    .rx(_pc_tx),
     .tx(_pc_rx),
-    .pb_reset(reset_fpgas)
+    .reset(reset_fpgas)
   );
   
   initial begin
@@ -84,11 +86,19 @@ module task1_img_pc2pc_test();
     pc_reset = 0;
     #100
     
-    pc_data = 8'b1010_1010;
-    #40
-    pc_send = 1;
+    pc_data = 8'b1111_1010;
     #20
-    pc_send = 0;
+    pc_send = 1;
+    #4000
+    pc_data = 8'b1111_0000;
+    #400
+    #4000
+    pc_data = 8'b1111_1111;
+    #400
+    #4000
+    pc_data = 8'b0000_0000;
+    // pc_send = 0;
+    #20000
     
     #10000 $finish;
     
@@ -113,4 +123,4 @@ module task1_img_pc2pc_test();
     #(PERIOD/2 - SHIFT1 - SHIFT2);
   end
 
-endmodule // task1_img_pc2pc_test
+endmodule // uart_pc_2_pc_test
