@@ -15,7 +15,7 @@ module task1_pc_from_to_fpga_crcfpga(
   input wire i_rx_pc,
   output wire o_tx_pc,
   // crc8
-  output wire [7:0] o_8_crc8,
+  output wire [7:0] o_8_led,
   // push button
   input wire pb_reset,
   input wire pb_start,
@@ -36,7 +36,8 @@ module task1_pc_from_to_fpga_crcfpga(
     uart_data_ready,
     sp_uart_data_ready;
   wire [7:0]
-    io_8_uart_data;
+    io_8_uart_data,
+	 crc8;
   reg [7:0]
     data_counter;
 
@@ -83,7 +84,7 @@ module task1_pc_from_to_fpga_crcfpga(
     crc_module(
       .data_in(io_8_uart_data),
       .crc_en(sp_uart_data_ready),
-      .crc_out(o_8_crc8),
+      .crc_out(crc8),
       .rst(db_reset),
       .clk(clk)
     );
@@ -91,10 +92,25 @@ module task1_pc_from_to_fpga_crcfpga(
   digit
     digit_module(
 	   clk,
-		{data_counter, o_8_crc8},
+		{data_counter, crc8},
 		dg,
 		~db_reset
     );
+	 
+	 reg [7:0] l_data;
+	 assign o_8_led = l_data;
+	 
+	 always @( posedge clk or posedge db_reset ) begin
+		if( db_reset ) begin
+		  l_data = 0;
+	   end else begin
+		  if( sp_uart_data_ready ) begin
+		    l_data = io_8_uart_data;
+		  end else begin
+		    l_data = l_data;
+		  end
+		end
+	 end
 	 
 	 always @( posedge clk or posedge db_reset ) begin
 		if( db_reset ) begin
@@ -120,7 +136,7 @@ module task1_pc_from_to_fpga_crcpc(
   input wire i_rx_pc,
   output wire o_tx_pc,
   // crc8
-  output wire [7:0] o_8_crc8,
+  output wire [7:0] o_8_led,
   // push button
   input wire pb_reset,
   input wire pb_start,
@@ -141,7 +157,8 @@ module task1_pc_from_to_fpga_crcpc(
     uart_data_ready,
     sp_uart_data_ready;
   wire [7:0]
-    io_8_uart_data;
+    io_8_uart_data,
+	 crc8;
   reg [7:0]
     data_counter;
 
@@ -188,7 +205,7 @@ module task1_pc_from_to_fpga_crcpc(
     crc_module(
       .data_in(io_8_uart_data),
       .crc_en(sp_uart_data_ready),
-      .crc_out(o_8_crc8),
+      .crc_out(crc8),
       .rst(db_reset),
       .clk(clk)
     );
@@ -196,10 +213,25 @@ module task1_pc_from_to_fpga_crcpc(
   digit
     digit_module(
 	   clk,
-		{data_counter, o_8_crc8},
+		{data_counter, crc8},
 		dg,
 		~db_reset
     );
+	 
+	 reg [7:0] l_data;
+	 assign o_8_led = l_data;
+	 
+	 always @( posedge clk or posedge db_reset ) begin
+		if( db_reset ) begin
+		  l_data = 0;
+	   end else begin
+		  if( sp_uart_data_ready ) begin
+		    l_data = io_8_uart_data;
+		  end else begin
+		    l_data = l_data;
+		  end
+		end
+	 end
 	 
 	 always @( posedge clk or posedge db_reset ) begin
 		if( db_reset ) begin
