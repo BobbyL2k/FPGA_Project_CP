@@ -28,14 +28,11 @@ module FIFO_tb(
     reg pop;
     reg reset;
     reg clock;
-    wire [12:0] data_count;
+    wire [9:0] data_count;
     wire [7:0] data_out;
     wire empty;
     wire busy;
     wire full;
-    wire [3:0] state;
-    wire [9:0] rear;
-    wire [9:0] front;
     fifo ff(data_count,data_out,empty,busy,full,data_in,push,pop,reset,clock);
          
     initial begin
