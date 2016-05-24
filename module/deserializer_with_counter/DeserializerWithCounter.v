@@ -50,7 +50,7 @@ module DeserializerWithCounter(
     assign added_data_counter = data_counter + 1;
     assign next_counter = (ps == 2 && !lastBitInWord) ? added_word_counter : (ps == 2) ? {{WORD_COUNTER_SIZE-1{1'b0}},{1'b1}} : {WORD_COUNTER_SIZE{1'b0}};
     assign next_data_counter = (ps == 2) ? added_data_counter : {DATA_COUNTER_SIZE{1'b0}};
-    assign next_data = (ps == 2 && ns != 1'b0) ? {data_in,data[WORD_SIZE-1 : 1]} : data;
+    assign next_data = (ps ==1||(ps == 2 && ns != 1'b0)) ? {data_in,data[WORD_SIZE-1 : 1]} : data;
     assign lastBitInWord = (counter == WORD_SIZE) ? 1'b1 : 1'b0;
     assign lastBitInData = (data_counter == DATA_LENGTH) ? 1'b1 : 1'b0;
     assign RCO = lastBitInWord;
@@ -68,7 +68,7 @@ module DeserializerWithCounter(
         if(reset) begin
             ps <= 0;
             counter <= 0;
-            data <= 0;
+            data <= 8'hC9;
             data_counter <= 0;
         end
         else begin

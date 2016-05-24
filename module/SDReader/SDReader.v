@@ -89,13 +89,16 @@ module SDReader(
 	wire deseres7_data_in;
 	wire [31:0] next_address;
 	wire [7:0] next_counter;
+	wire next_gotDATA_TOKEN;
 	
 	reg [47:0] sendcmd_data_in;
 	reg [5:0] ns;
 	reg [5:0] ps;
 	reg [31:0] address;
 	reg [7:0] counter;
+	reg gotDATA_TOKEN;
 	
+	assign next_gotDATA_TOKEN = (ps == sDATA_CMD17 && desedata_data_out == 8'hFE) ? 1'b1 : 1'b0 ;
 	assign count_to = 10;
 	
 	assign MOSI = (sendcmd_busy) ? sendcmd_data_out : 1'b1;
@@ -115,8 +118,8 @@ module SDReader(
 	assign next_address = (ps == sWAIT_CRC) ?  address + 32'h0000_0200 : address ;
 	assign next_counter = (ps == sWAIT_CRC) ?  counter + 1 : counter;
 	
-	assign fifo_data_in = 8'b0110_1010;
-	//assign fifo_data_in = desedata_data_out;
+	//assign fifo_data_in = 8'b0110_1010;
+	assign fifo_data_in = desedata_data_out;
 	assign fifo_push = desedata_RCO;
 	assign fifo_available = (ps==sSEND_CMD17 ||ps==sRESPONSE_CMD17||ps==sCHECK_RES_CMD17||ps==sSTART_DESE_DATA_CMD17||ps==sDATA_CMD17||ps==sWAIT_CRC) ? 1'b0 : 1'b1;
 	
@@ -128,15 +131,16 @@ module SDReader(
 	//assign LED =  (ps == sFINAL) ? deseres7_data_out : deseres_data_out;
 	//assign LED =  (ps == sFINAL) ? deseres7_data_out : {2'b11,ps};
 	assign LED = desedata_data_out;
+	//assign LED = desedata_data_out;
 	//assign LED =  {fifo_empty,waiter_busy,ps};
 	//assign LED = (ps == sFINAL) ? deseres_data_out : (ps == sRESPONSE_CMD0)? 8'hAA : 8'h66;
 	//assign LED = {deseres_busy,waiter_busy,deseres_data_out[7],ps};
 	//---------------------- Call Module -----------------------
 		serializer #(.DATA_WIDTH(48)) sendcmd(sendcmd_busy,sendcmd_data_out,sendcmd_data_in,sendcmd_start,SCLK,reset_module);
 		Waiter #(.COUNTER_SIZE(8)) waiter(waiter_busy,waiter_start,waiter_count_to,SCLK,reset_module);
-		DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,deseres_data_in,SCLK,reset_module); //Deserializer for response1
+		DeserializerWithCounter #(.DATA_LENGTH(7),.WORD_SIZE(8)) deseres(deseres_data_out,deseres_busy,deseres_RCO,deseres_start,MISO,SCLK,reset_module); //Deserializer for response1
 		//DeserializerWithCounter #(.DATA_LENGTH(39),.WORD_SIZE(8)) deseresr7(deseres7_data_out,deseres7_busy,deseres7_RCO,deseres7_start,deseres7_data_in,SCLK,reset_module);
-		DeserializerWithCounter #(.DATA_LENGTH(4096),.WORD_SIZE(8)) desedata(desedata_data_out,desedata_busy,desedata_RCO,desedata_start,desedata_data_in,SCLK,reset_module); //Deserializer for data block
+		DeserializerWithCounter #(.DATA_LENGTH(4096),.WORD_SIZE(8)) desedata(desedata_data_out,desedata_busy,desedata_RCO,desedata_start,MISO,SCLK,reset_module); //Deserializer for data block
 	
 	//----------------------------------------------------------
 	
@@ -145,11 +149,13 @@ module SDReader(
 			counter <= 8'h00;
 			address <= 32'h00_F0_00_00;
 			ps <= sIDLE;
+			gotDATA_TOKEN = 0;
 		end
 		else begin
 			counter <= next_counter;
 			address <= next_address;
 			ps <= ns;
+			gotDATA_TOKEN = next_gotDATA_TOKEN;
 		end
 	end
 	
@@ -210,10 +216,66 @@ module SDReader(
 				end
 			endcase
 	end
-	
+	wire [47:0]aaa;
+	assign aaa = {8'b01_010001,address,8'b1111_1111};
 	always @(*) begin
 		case(ps) 
-			sSEND_CMD17  : sendcmd_data_in <= {48'b1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000_0010};
+			
+			//01 010001 address 1111 1111
+			sSEND_CMD17  : begin
+				sendcmd_data_in[47] <= aaa[0];
+sendcmd_data_in[46] <= aaa[1];
+sendcmd_data_in[45] <= aaa[2];
+sendcmd_data_in[44] <= aaa[3];
+sendcmd_data_in[43] <= aaa[4];
+sendcmd_data_in[42] <= aaa[5];
+sendcmd_data_in[41] <= aaa[6];
+sendcmd_data_in[40] <= aaa[7];
+sendcmd_data_in[39] <= aaa[8];
+sendcmd_data_in[38] <= aaa[9];
+sendcmd_data_in[37] <= aaa[10];
+sendcmd_data_in[36] <= aaa[11];
+sendcmd_data_in[35] <= aaa[12];
+sendcmd_data_in[34] <= aaa[13];
+sendcmd_data_in[33] <= aaa[14];
+sendcmd_data_in[32] <= aaa[15];
+sendcmd_data_in[31] <= aaa[16];
+sendcmd_data_in[30] <= aaa[17];
+sendcmd_data_in[29] <= aaa[18];
+sendcmd_data_in[28] <= aaa[19];
+sendcmd_data_in[27] <= aaa[20];
+sendcmd_data_in[26] <= aaa[21];
+sendcmd_data_in[25] <= aaa[22];
+sendcmd_data_in[24] <= aaa[23];
+sendcmd_data_in[23] <= aaa[24];
+sendcmd_data_in[22] <= aaa[25];
+sendcmd_data_in[21] <= aaa[26];
+sendcmd_data_in[20] <= aaa[27];
+sendcmd_data_in[19] <= aaa[28];
+sendcmd_data_in[18] <= aaa[29];
+sendcmd_data_in[17] <= aaa[30];
+sendcmd_data_in[16] <= aaa[31];
+sendcmd_data_in[15] <= aaa[32];
+sendcmd_data_in[14] <= aaa[33];
+sendcmd_data_in[13] <= aaa[34];
+sendcmd_data_in[12] <= aaa[35];
+sendcmd_data_in[11] <= aaa[36];
+sendcmd_data_in[10] <= aaa[37];
+sendcmd_data_in[9] <= aaa[38];
+sendcmd_data_in[8] <= aaa[39];
+sendcmd_data_in[7] <= aaa[40];
+sendcmd_data_in[6] <= aaa[41];
+sendcmd_data_in[5] <= aaa[42];
+sendcmd_data_in[4] <= aaa[43];
+sendcmd_data_in[3] <= aaa[44];
+sendcmd_data_in[2] <= aaa[45];
+sendcmd_data_in[1] <= aaa[46];
+sendcmd_data_in[0] <= aaa[47];
+			end
+			
+			
+			//sendcmd_data_in = rev_cmd17;
+			//{8'b1111_1111,address[31:0],8'b100010_10};
 			default : sendcmd_data_in <= 48'hFFFF_FFFF_FFFF;
 		endcase
 	end

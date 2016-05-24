@@ -66,7 +66,7 @@ module TopModule_SDCardInitailizer(
 		//output wire [7:0] fifo_data_in;
 		//output wire fifo_push;
 		output wire [7:0] LED;
-		
+		reg [7:0] sdini_deb;
 		
 		wire card_ready,initial_MOSI,initial_CS,initial_start,d_clock;
 		wire reader_start,reader_CS,reader_MOSI,reader_busy;
@@ -101,7 +101,7 @@ module TopModule_SDCardInitailizer(
 		//assign LED = (ps == sFINAL) ? {fifo_data_in} : {8'hA4};
 		//assign LED = {card_ready,reader_busy,1'b1,ps};
 		//assign LED = fifo_data_in;
-		assign LED = (debug) ? LED_READER : {fifo_available,fifo_empty,fifo_full,ps} ;
+		assign LED = (debug) ?  LED_READER : {fifo_available,fifo_empty,MISO,ps} ;
 		clock_divider #(.IN_FREQ(50),.OUT_FREQ(1))clkdiv(clock,d_clock,reset_PB_down);
 		PushButton_Debouncer Debouncer_start(d_clock,start,start_PB_state,start_PB_down,start_PB_up);
 		PushButton_Debouncer Debouncer_reset(clock,reset,reset_PB_state,reset_PB_down,reset_PB_up);
