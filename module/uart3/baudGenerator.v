@@ -8,6 +8,7 @@ module baudGenerator(
 	// 2048 / 170 :: 22XXXXXX/(16*115200)
 	parameter bitDepth = 11;
 	parameter adder = 170;
+	
 	reg [bitDepth:0]counter;
 	assign subBaud = counter[bitDepth];
 	always @(posedge clk)begin
