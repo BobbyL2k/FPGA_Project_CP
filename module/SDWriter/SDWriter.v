@@ -1,3 +1,6 @@
+`include "../waiter/waiter.v"
+`include "../serializer/serializer.v"
+`include "../deserializer_with_counter/DeserializerWithCounter.v"
 module SDWriter(
     input wire i_reset,
     input wire i_start,
@@ -12,9 +15,6 @@ module SDWriter(
     o_8_LED
   );
   
-  wire 
-    ;
-
   reg [4:0]
     c_state, n_state;
     
@@ -92,17 +92,19 @@ module SDWriter(
   
   /// Helper Module for sSendData
   parameter data_to_send_WIDTH = 8+4096+16;
-  wire [data_to_send_WIDTH-1:0] data_to_send = {8'b1111_1110, mem, 16{1'b1}};
+  wire [data_to_send_WIDTH-1:0] data_to_send;
+  assign data_to_send = {8'b1111_1110, mem, {16{1'b1}}};
   reg [data_to_send_WIDTH-1:0] reverse_data_to_send;
   wire serializer_send_data_busy;
   
-  integer i;
+  //integer i;
   always @* begin
     for(i=0; i<data_to_send_WIDTH; i=i+1) begin
       reverse_data_to_send[i] = data_to_send[data_to_send_WIDTH-1 -i];
     end
   end
-  wire isStateSendData = c_state = sSendData;
+  wire isStateSendData; 
+  assign isStateSendData = c_state == sSendData;
   serializer #(
     .DATA_WIDTH(data_to_send_WIDTH))
   serializer_send_data(
@@ -167,7 +169,7 @@ module SDWriter(
   end
   
   always @( * ) begin
-    case (c_state) begin
+    case (c_state)
       sIdle : begin
         if( i_start )begin
           n_state = sCheckFIFODataCount;
@@ -181,6 +183,7 @@ module SDWriter(
         end else begin
           n_state = sCheckFIFODataCount;
         end
+      end
       sStoreData : begin
         if( store_counter >= 512 ) begin
           n_state = sSendCMD24;
