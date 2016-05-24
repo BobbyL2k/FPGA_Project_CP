@@ -40,7 +40,8 @@ module TopModule_SDCardInitailizer(
 	SCLK,
 	MOSI,
 	busy,
-	LED
+	LED,
+	dip
     );
 	 
 		parameter sIDLE = 5'b00000;
@@ -57,6 +58,7 @@ module TopModule_SDCardInitailizer(
 		input wire start;
 		input wire MISO;
 		input wire debug;
+		input wire [7:0]dip;
 		
 		output wire tx_o;
 		output wire CS;
@@ -76,7 +78,7 @@ module TopModule_SDCardInitailizer(
 		wire [7:0] fifo_data_in;
 		wire [7:0] fifo_data_out;
 		wire fifo_full;
-		
+		wire [7:0] crc_out;
 		//wire [7:0] dummy;
 		
 		//assign dummy = 8'b1000_1110;
@@ -101,14 +103,20 @@ module TopModule_SDCardInitailizer(
 		//assign LED = (ps == sFINAL) ? {fifo_data_in} : {8'hA4};
 		//assign LED = {card_ready,reader_busy,1'b1,ps};
 		//assign LED = fifo_data_in;
-		assign LED = (debug) ?  LED_READER : {fifo_available,fifo_empty,MISO,ps} ;
+		assign LED = crc_out;
 		clock_divider #(.IN_FREQ(50),.OUT_FREQ(1))clkdiv(clock,d_clock,reset_PB_down);
 		PushButton_Debouncer Debouncer_start(d_clock,start,start_PB_state,start_PB_down,start_PB_up);
 		PushButton_Debouncer Debouncer_reset(clock,reset,reset_PB_state,reset_PB_down,reset_PB_up);
-		
+		crc crc_module(
+  fifo_data_out,
+  1,
+  crc_out,
+  reset_PB_down,
+  sp_fifo_pop);
 		// Real World
 		parameter IN_FREQ = 220052; // Expected internal clock frequncy
 		parameter OUT_FREQ = 96;    // Baud Rate
+		
 		
 		uart_transmitter #(.IN_FREQ(IN_FREQ),.OUT_FREQ(OUT_FREQ)) uartTransmitter(fifo_data_out,uart_transmitter_busy,uart_transmitter_send,tx_o,reset_PB_down,clock);
 		single_pulser fifo_push_sp(fifo_push,sp_fifo_push,clock,reset_PB_down);
@@ -125,7 +133,7 @@ module TopModule_SDCardInitailizer(
 		.clock(clock));
 		
 		SDCardInitializer sdcardinitializer(card_ready,initial_MOSI,initial_CS,initial_start,reset_module,d_clock,MISO);
-		SDReader sdcardReader(reset_module,reader_start,MISO,reader_CS,d_clock,reader_MOSI,reader_busy,fifo_data_in,fifo_push,fifo_empty,fifo_available,LED_READER);
+		SDReader sdcardReader(reset_module,reader_start,MISO,reader_CS,d_clock,reader_MOSI,reader_busy,dip,fifo_data_in,fifo_push,fifo_empty,fifo_available,LED_READER);
 		
 		always @(posedge d_clock or posedge reset_PB_down) begin
 			if(reset_PB_down) begin

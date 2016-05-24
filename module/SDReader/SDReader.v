@@ -26,7 +26,7 @@ module SDReader(
 	SCLK,
 	MOSI,
 	busy,
-	//count_to,
+	count_to,
 	fifo_data_in,
 	fifo_push,
 	fifo_empty,
@@ -58,7 +58,7 @@ module SDReader(
 		input wire MISO;
 		input wire fifo_empty;
 		input wire SCLK;
-		//input wire count_to;
+		input wire [7:0]count_to;
 		
 		output wire fifo_available;
 		output wire CS;
@@ -82,7 +82,7 @@ module SDReader(
 	wire [7:0]deseres_data_out;
 	wire deseres_busy;
 	wire waiter_busy;
-	wire [7:0]count_to; // TOEDIT
+	//wire [7:0]count_to; // TOEDIT
 	
 	wire [7:0]deseres7_data_out;
 	wire deseres7_start;
@@ -99,7 +99,7 @@ module SDReader(
 	reg gotDATA_TOKEN;
 	
 	assign next_gotDATA_TOKEN = (ps == sDATA_CMD17 && desedata_data_out == 8'hFE) ? 1'b1 : 1'b0 ;
-	assign count_to = 10;
+	//assign count_to = 10;
 	
 	assign MOSI = (sendcmd_busy) ? sendcmd_data_out : 1'b1;
 	//assign CS = (ps == sSET_SPI_MODE || ps == sWAIT_SET_SPI_MODE || ps == sSET_CS_HIGH_CMD0 
