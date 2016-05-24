@@ -72,12 +72,11 @@ module task1_pc_from_to_fpga_crcfpga(
     .bitDepth(11),
 	 .adder(151))
     uartR(
-      .data(io_8_uart_data),
-      .data_ready(uart_data_ready),
-      //.i_clear_ready(sp_uart_data_ready),
-      .rx(i_rx_fpga),
-      .nrst(~db_reset),
-      .clk(clk)
+      .i_rx(i_rx_fpga),
+      .o_8_data(io_8_uart_data),
+      .o_data_ready(uart_data_ready),
+      .i_clk(clk),
+      .i_reset(db_reset)
     );
 
   crc 
@@ -191,14 +190,13 @@ module task1_pc_from_to_fpga_crcpc(
 
   uart_receiver #(
     .bitDepth(11),
-	 .adder(170))
+	  .adder(170))
     uartR(
-      .data(io_8_uart_data),
-      .data_ready(uart_data_ready),
-      //.i_clear_ready(sp_uart_data_ready),
-      .rx(i_rx_pc),
-      .nrst(~db_reset),
-      .clk(clk)
+      .i_rx(i_rx_pc),
+      .o_8_data(io_8_uart_data),
+      .o_data_ready(uart_data_ready),
+      .i_clk(clk)
+      .i_reset(~db_reset),
     );
 
   crc 

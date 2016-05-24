@@ -1,11 +1,11 @@
 `include "../uart3/baudGenerator.v"
 
 module uart_receiver(
-  input rx,
-  output reg [7:0] data,
-  output data_ready,
-  input clk,
-  input nrst
+  input wire i_rx,
+  output reg [7:0] o_8_data,
+  output wire o_data_ready,
+  input wire i_clk,
+  input wire i_reset
 );
      
   parameter bitDepth = 11;
@@ -30,7 +30,7 @@ module uart_receiver(
   assign data_ready = c_state == {sDataRead, 3'b111} && sub_baud_counter >= half_baud;
   
   always @( posedge d_clk )begin
-    if(!nrst)begin
+    if(i_reset)begin
       n_state = {sActiveCheck, 3'b000};
       sub_baud_counter = 5'b0_0000;
       data = 8'b00000000;
