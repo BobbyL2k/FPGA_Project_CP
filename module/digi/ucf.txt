@@ -1,0 +1,32 @@
+
+
+NET "i_rx_pc" LOC = P132;
+NET "o_tx_pc" LOC = P131;
+NET "o_8_crc8[7]" LOC = P78;
+NET "o_8_crc8[6]" LOC = P73;
+NET "o_8_crc8[5]" LOC = P79;
+NET "o_8_crc8[4]" LOC = P74;
+NET "o_8_crc8[3]" LOC = P76;
+NET "o_8_crc8[2]" LOC = P69;
+NET "o_8_crc8[1]" LOC = P77;
+NET "o_8_crc8[0]" LOC = P70;
+NET "pb_start" LOC = P50;
+NET "pb_reset" LOC = P51;
+NET "pb_debug" LOC = P44;
+NET "clk" LOC = P127;
+
+# PlanAhead Generated physical constraints 
+
+NET "i_rx_fpga" LOC = P86;
+NET "o_tx_fpga" LOC = P89;
+NET "dg[10]" LOC = P23;
+NET "dg[9]" LOC = P25;
+NET "dg[8]" LOC = P27;
+NET "dg[7]" LOC = P30;
+NET "dg[6]" LOC = P32;
+NET "dg[5]" LOC = P35;
+NET "dg[4]" LOC = P40;
+NET "dg[3]" LOC = P41;
+NET "dg[2]" LOC = P36;
+NET "dg[1]" LOC = P33;
+NET "dg[0]" LOC = P31;

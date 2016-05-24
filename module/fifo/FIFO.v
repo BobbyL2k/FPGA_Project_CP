@@ -42,9 +42,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module fifo(
-        front,
-        rear,
-        state,
+		data_count,
 		data_out,
 		empty,
 		busy,
@@ -57,16 +55,15 @@ module fifo(
     );
 	 
 	 parameter DATA_WIDTH = 8;
-	 parameter ADDR_WIDTH = 10;
+	 parameter ADDR_WIDTH = 13;
+	 parameter RAM_DEPTH = 4500;
 	 
 	 //output reg [DATA_WIDTH-1 : 0] data_out;
 	 output wire [DATA_WIDTH-1 : 0] data_out;
 	 output wire empty;
 	 output wire busy; // pushing data;
 	 output wire full;
-	 output wire [3:0] state;
-	 output wire [9:0] rear;
-	 output wire [9:0] front;
+	 output reg [ADDR_WIDTH-1 : 0]data_count;
 	 
 	 input wire [DATA_WIDTH-1 : 0] data_in;
 	 input wire push;
@@ -74,128 +71,93 @@ module fifo(
 	 input wire reset;
 	 input wire clock;
 	 
-	 reg [3:0] ps;
-	 reg [3:0] ns;
-	 reg [ADDR_WIDTH-1:0] front_addr;
-	 reg [ADDR_WIDTH-1:0] rear_addr;
-	 wire [ADDR_WIDTH-1:0] front_addr_in;
-	 wire [ADDR_WIDTH-1:0] rear_addr_in;
-	 wire [DATA_WIDTH-1 : 0] DOA;
-	 wire [DATA_WIDTH-1 : 0] DOB;
-	 wire [DATA_WIDTH-1 : 0] DIA;      // Port A 1-bit Data Input
-     wire [DATA_WIDTH-1 : 0] DIB;
-     wire [ADDR_WIDTH-1 : 0]next_rear_addr;
-     wire [ADDR_WIDTH-1 : 0]next_front_addr;
-	
+	 reg [1:0]pushing;
+	 reg poping;
+	 reg [1:0]pushing_ns;
+	 reg poping_ns;
 	 
-	 wire  
-      ADDRA,  // Port A 14-bit Address Input
-      ADDRB,  // Port B 14-bit Address Input
-      CLKA,    // Port A Clock
-      CLKB,    // Port B Clock
-           // Port B 1-bit Data Input
-      ENA,      // Port A RAM Enable Input
-      ENB,      // Port B RAM Enable Input
-      SSRA,    // Port A Synchronous Set/Reset Input
-      SSRB,    // Port B Synchronous Set/Reset Input
-      WEA,      // Port A Write Enable Input
-      WEB; 
-	 // !!!A for "FRONT"!!! 
-	 // !!!B for "REAR" !!!
-	 assign ADDRA = {6'b0000_00,front_addr};
-	 assign ADDRB = {6'b0000_00,rear_addr};
-	 assign CLKA = clock;
-	 assign CLKB = clock;
-	 assign DIA = 16'b0000_0000_0000_0000;
-	 assign DIB = {8'b0000_0000,data_in};
-	 assign ENA = 1'b1;
-	 assign ENB = 1'b0;
-	 assign SSRA = reset;
-	 assign SSRB = reset;
-	 assign WEA = 0;
-	 assign WEB = (pushing) ? 1'b1 : 1'b0;
+	 reg [DATA_WIDTH-1 : 0] mem [RAM_DEPTH-1 : 0];
+	 reg [ADDR_WIDTH-1 : 0] front_addr;
+	 reg [ADDR_WIDTH-1 : 0] rear_addr;
+	 wire [ADDR_WIDTH-1 : 0] front_addr_in;
+	 wire [ADDR_WIDTH-1 : 0] rear_addr_in;
+	 wire [ADDR_WIDTH-1 : 0] next_front_addr;
+	 wire [ADDR_WIDTH-1 : 0] next_rear_addr;
+	 wire [DATA_WIDTH-1 : 0] mem_in;
+	 reg [ADDR_WIDTH-1 : 0] data_count_in;
+     //wire [ADDR_WIDTH-1 : 0] next_rear_addr;
+     //wire [ADDR_WIDTH-1 : 0] next_front_addr;
 	 
-	 
-	 assign pushing = (ps == 4'b1001 || ps == 4'b1000 || ps == 4'b1100 || ps == 4'b1101) ? 1'b1 : 1'b0;
-	 assign poping = (ps == 4'b0001 || ps == 4'b1100 ) ? 1'b1 : 1'b0;
+	 assign data_out = mem[front_addr];
 	 assign empty = (rear_addr == front_addr) ? 1'b1 : 1'b0;
-	 assign full = (next_rear_addr == front_addr) ? 1'b1 : 1'b0;
-	 assign busy = (pushing || poping) ? 1'b1 : 1'b0;
-	 assign rear_addr_in = (ps == 4'b1001 || ps == 4'b1101) ? next_rear_addr : rear_addr;
-	 assign front_addr_in = (ps == 4'b0001 || ps == 4'b1100) ? next_front_addr : front_addr; 
-	 assign next_rear_addr = rear_addr + 10'b00_0000_0001;
-	 assign next_front_addr = front_addr + 10'b00_0000_0001;
-	 assign DIPA = ^DIA;
-	 assign DIPB = ^DIB;
-	 assign state = ps;
-	 assign rear = rear_addr;
-	 assign front = front_addr;
-	 
-	 DualPortRam ram(clock,front_addr,data_out,WEA,ENA,rear_addr,data_in,WEB,ENB);
-	 
+	 assign full = (rear_addr+1 == front_addr) ? 1'b1 : 1'b0;
+	 assign busy = (poping == 1'b0 && pushing == 2'b00) ? 1'b0 : 1'b1;
+	 assign front_addr_in = (poping) ? next_front_addr : front_addr;
+	 assign rear_addr_in = (pushing == 2'b10) ? next_rear_addr : rear_addr ;
+	 assign next_front_addr = (front_addr == 4450) ? {ADDR_WIDTH{1'b0}} : front_addr + 1;
+	 assign next_rear_addr = (rear_addr == 4450) ? {ADDR_WIDTH{1'b0}} : rear_addr + 1;
+	 assign mem_in = (pushing == 2'b01) ? data_in : mem[rear_addr];
+
 	initial begin
-		ps = 0;
+		poping = 0;
+		pushing = 0;
 		front_addr = 0;
 		rear_addr = 0;
-		//data_out = 0;
 	end
 	
 	always @(posedge clock or posedge reset) begin
 		if(reset) begin
-			ps = 0;
+			poping <= 1'b0;
+			pushing <= 2'b00;
 			front_addr <= {ADDR_WIDTH{1'b0}};
 			rear_addr <= {ADDR_WIDTH{1'b0}};
-			//data_out <= {DATA_WIDTH{1'b0}};
+			mem[rear_addr] <= 8'h00;
+			data_count <= 13'b0_0000_0000_0000;
 		end
 		else begin
-			ps = ns;
-			front_addr <= front_addr_in; // TOEDIT
-			rear_addr <= rear_addr_in; // TOEDIT
-			//data_out <= (poping) ?  DOA[DATA_WIDTH-1 : 0] : data_out;
+			poping <= poping_ns;
+			pushing <= pushing_ns;
+			front_addr <= front_addr_in;
+			rear_addr <= rear_addr_in;
+			mem[rear_addr] <= mem_in;
+			data_count <= data_count_in;
 		end
 	end
 	
 	always @(*) begin
-		case(ps)
-			// IDLE STATE
-			4'b0000 : begin
-				if(pop && !empty && push && !full) begin
-					ns = 4'b1100;
-				end
-				else if(pop && !empty) begin
-					ns = 4'b0001;
-				end
-				else if(push && !full) begin
-					ns = 4'b1000;
-				end
-				else
-					ns = 4'b0000;
+		case(pushing)
+			2'b00 : begin
+				if(push && !full) pushing_ns <= 2'b01;
+				else pushing_ns <= 2'b00;
 			end
-			//POP STATES
-			4'b0001 : begin
-				ns = 4'b0000; // LOL
+			2'b01 : begin
+				pushing_ns <= 2'b10;
 			end
-			//PUSH STATES
-			4'b1000 : begin
-				ns = 4'b1001;
+			2'b10 : begin
+				pushing_ns <= 2'b00;
 			end
-			4'b1001 : begin
-				ns = 4'b0000;
-			end
-			//PUSH AND POP STATES
-			4'b1100 : begin
-				ns = 4'b1101;
-			end
-			
-			4'b1101 : begin
-				ns = 4'b0000;
-			end
-			
-			default : begin
-				ns = 4'b0000;
-			end
-			
+			default : pushing_ns <= 2'b00;
 		endcase
+	end
+	
+	always @(*) begin
+		case(poping)
+			1'b0 : begin
+				if(pop && !empty) poping_ns<=1'b1;
+				else poping_ns<=1'b0;
+			end
+			1'b1 : begin
+				poping_ns <= 1'b0;
+			end
+			default : poping_ns <= 1'b0;
+		endcase
+	end
+	
+	always @(*) begin
+		if(pushing == 2'b01 && poping == 1'b1) data_count_in <= data_count;
+		else if(pushing == 2'b01) data_count_in <= data_count + 1;
+		else if(poping == 1'b1) data_count_in <= data_count - 1;
+		else data_count_in <= data_count;
 	end
 
 endmodule
