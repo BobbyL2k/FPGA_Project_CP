@@ -165,6 +165,9 @@ module SDWriter(
   parameter sWaitResponseSendData = 5'b00101;
   parameter sCheckBusy            = 5'b00110;
   parameter sFINAL                = 5'b00111;
+  parameter sStoreData_Pop			 = 5'b01000;
+  
+  assign o_fifo_pop = (c_state == sStoreData_Pop) ? 1'b1 : 1'b0;
   
   always @( posedge i_s_clk or i_reset ) begin
     if( i_reset )begin
@@ -197,9 +200,12 @@ module SDWriter(
         if( store_counter >= 512 ) begin
           n_state = sSendCMD24;
         end else begin
-          n_state = sStoreData;
+          n_state = sStoreData_Pop;
         end
       end
+		sStoreData_Pop : begin
+			ns <= sStoreData;
+		end
       sSendCMD24 : begin
         n_state = sWaitResponseCMD24;
       end

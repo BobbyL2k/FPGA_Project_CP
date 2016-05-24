@@ -112,24 +112,24 @@ module TopModule_SDCardInitailizer(
 		// Real World
 		parameter IN_FREQ = 220052; // Expected internal clock frequncy
 		parameter OUT_FREQ = 96;    // Baud Rate
-		
-		uart_transmitter #(.IN_FREQ(IN_FREQ),.OUT_FREQ(OUT_FREQ)) uartTransmitter(fifo_data_out,uart_transmitter_busy,uart_transmitter_send,tx_o,reset_PB_down,clock);
-		single_pulser fifo_push_sp(fifo_push,sp_fifo_push,clock,reset_PB_down);
+
+		single_pulser fifo_push_sp(uart_data_ready,sp_fifo_push,clock,reset_PB_down);
 		single_pulser fifo_pop_sp(fifo_pop,sp_fifo_pop,clock,reset_PB_down);
-		fifo #(.ADDR_WIDTH(10)) Fifo(
-		.data_out(fifo_data_out),
-		.empty(fifo_empty),
-		.busy(fifo_busy),
-		.full(fifo_full),
-		.data_in(fifo_data_in),
-		.push(sp_fifo_push),
-		.pop(sp_fifo_pop),
-		.reset(reset_PB_down),
-		.clock(clock));
-    
+		fifo ff(
+				.data_count(fifo_data_count),
+				.data_out(fifo_data_count),
+				.empty(fifo_empty),
+				.busy(fifo_busy),
+				.full(fifo_full),
+				.data_in(l_8_uart_data),
+				.push(sp_fifo_push),
+				.pop(sp_fifo_pop),
+				.reset(reset_PB_down),
+				.clock(clock)
+    );
     /// UART
     wire [7:0] l_8_uart_data;
-    wire uart_data_ready, uart_data_ready_sp;
+    wire uart_data_ready, sp_uart_data_ready;
 		
     single_pulser 
       uart_data_ready_sp(
