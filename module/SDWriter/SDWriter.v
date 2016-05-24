@@ -7,13 +7,14 @@ module SDWriter(
     input wire i_s_clk,
     output wire o_busy,
     input wire MISO,
+    input wire [7:0]dip_switch,
     output wire MOSI,
     output wire o_fifo_pop,
     input wire [7:0] i_8_fifo_data_out,
     input wire i_fifo_data_count, // number of data in FIDO
-    input wire i_fifo_available, // ??
-    o_8_LED
+    output wire [7:0] o_8_LED
   );
+  reg [7:0] written_block_counter;
   
   reg [4:0]
     c_state, n_state;
@@ -22,6 +23,8 @@ module SDWriter(
   reg [4095:0]
     mem;
   assign o_fifo_pop = c_state == sStoreData;
+  assign o_busy = (c_state == sIDLE || c_state == sFINAL) ?  1'b0 : 1'b1;
+  assign o_8_LED = {c_state,3'b111};
 
   always @( posedge i_s_clk or posedge i_reset ) begin
     if( i_reset ) begin
@@ -39,9 +42,11 @@ module SDWriter(
   always @( posedge i_s_clk or posedge i_reset ) begin
     if( i_reset ) begin
       address_to_write_to = 32'h00_F0_00_00;
+      written_block_counter = 0;
     end else begin
       if( c_state == sCheckBusy && n_state == sCheckFIFODataCount) begin
         address_to_write_to = address_to_write_to + 1;
+        written_block_counter = written_block_counter + 1;
       end
     end
   end
@@ -159,6 +164,7 @@ module SDWriter(
   parameter sSendData             = 5'b00100;
   parameter sWaitResponseSendData = 5'b00101;
   parameter sCheckBusy            = 5'b00110;
+  parameter sFINAL                = 5'b00111;
   
   always @( posedge i_s_clk or i_reset ) begin
     if( i_reset )begin
@@ -178,7 +184,10 @@ module SDWriter(
         end
       end
       sCheckFIFODataCount : begin
-        if( i_fifo_data_count >= 512 ) begin
+        if(written_block_counter == dip_switch) begin
+          n_state = sFINAL;
+        end
+        else if( i_fifo_data_count >= 512 ) begin
           n_state = sStoreData;
         end else begin
           n_state = sCheckFIFODataCount;
@@ -221,6 +230,9 @@ module SDWriter(
         end else begin
           n_state = sCheckFIFODataCount;
         end
+      end
+      sFINAL : begin
+        n_state = sFINAL;
       end
       default: begin
         n_state = sIdle;

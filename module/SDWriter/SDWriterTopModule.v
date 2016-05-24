@@ -30,7 +30,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module TopModule_SDCardInitailizer(
-	tx_o,
+	i_rx,
 	debug,
 	reset,
 	clock,
@@ -40,7 +40,8 @@ module TopModule_SDCardInitailizer(
 	SCLK,
 	MOSI,
 	busy,
-	LED
+	LED,
+  dip_switch
     );
 	 
 		parameter sIDLE = 5'b00000;
@@ -57,6 +58,7 @@ module TopModule_SDCardInitailizer(
 		input wire start;
 		input wire MISO;
 		input wire debug;
+    input wire[7:0] dip_switch;
 		
 		output wire tx_o;
 		output wire CS;
@@ -71,7 +73,8 @@ module TopModule_SDCardInitailizer(
 		wire card_ready,initial_MOSI,initial_CS,initial_start,d_clock;
 		wire reader_start,reader_CS,reader_MOSI,reader_busy;
 		wire reset_module;
-		wire [7:0] LED_READER;
+    wire start_module;
+		wire [7:0] LED_WRITE;
 		wire fifo_empty, fifo_available, uart_transmitter_busy;
 		wire [7:0] fifo_data_in;
 		wire [7:0] fifo_data_out;
@@ -85,7 +88,7 @@ module TopModule_SDCardInitailizer(
 		reg [4:0] ns;
 		reg [4:0] ps;
 		
-		
+		assign start_module = ( ps == sINNITIAL ) ? 1'b1 : 1'b0;
 		assign CS = 1'b0;
 		assign SCLK = d_clock;
 		assign MOSI = (ps==sWAIT_INNITIAL && !card_ready)? initial_MOSI : (ps==sWAIT_READER && reader_busy)? reader_MOSI : 1'b1; // please fix
@@ -101,7 +104,7 @@ module TopModule_SDCardInitailizer(
 		//assign LED = (ps == sFINAL) ? {fifo_data_in} : {8'hA4};
 		//assign LED = {card_ready,reader_busy,1'b1,ps};
 		//assign LED = fifo_data_in;
-		assign LED = (debug) ? LED_READER : {fifo_available,fifo_empty,fifo_full,ps} ;
+		assign LED = (debug) ? LED_WRITER : {fifo_available,fifo_empty,fifo_full,ps} ;
 		clock_divider #(.IN_FREQ(50),.OUT_FREQ(1))clkdiv(clock,d_clock,reset_PB_down);
 		PushButton_Debouncer Debouncer_start(d_clock,start,start_PB_state,start_PB_down,start_PB_up);
 		PushButton_Debouncer Debouncer_reset(clock,reset,reset_PB_state,reset_PB_down,reset_PB_up);
@@ -123,10 +126,44 @@ module TopModule_SDCardInitailizer(
 		.pop(sp_fifo_pop),
 		.reset(reset_PB_down),
 		.clock(clock));
+    
+    /// UART
+    wire [7:0] l_8_uart_data;
+    wire uart_data_ready, uart_data_ready_sp;
+		
+    single_pulser 
+      uart_data_ready_sp(
+        .signal_in(uart_data_ready),
+        .signal_out(sp_uart_data_ready),
+        .clk(SCLK),
+        .reset(reset)
+      );
+    
+		uart_receiver
+			uartR(
+				.i_rx(i_rx),
+				.o_8_data(l_8_uart_data),
+				.o_data_ready(uart_data_ready),
+				.i_clk(clock),
+				.i_reset(reset)
+			);
+    /// END UART
 		
 		SDCardInitializer sdcardinitializer(card_ready,initial_MOSI,initial_CS,initial_start,reset_module,d_clock,MISO);
-		SDReader sdcardReader(reset_module,reader_start,MISO,reader_CS,d_clock,reader_MOSI,reader_busy,fifo_data_in,fifo_push,fifo_empty,fifo_available,LED_READER);
-		
+		SDWriter sdWriter(
+      .i_reset(reset_module),
+      .i_start(start_module),
+      .i_s_clk(d_clock),
+      .o_busy(sdWrite_busy),
+      .MISO(MISO),
+      .dip_switch(dip_switch),
+      .MOSI(MOSI),
+      .o_fifo_pop(fifo_pop),
+      .i_8_fifo_data_out(fifo_data_out),
+      .i_fifo_data_count(fifo_data_count), // number of data in FIDO
+      .o_8_LED(LED_WRITER)
+    );
+    
 		always @(posedge d_clock or posedge reset_PB_down) begin
 			if(reset_PB_down) begin
 				ps <= 0;
@@ -150,6 +187,7 @@ module TopModule_SDCardInitailizer(
 				sINNITIAL : begin
 					ns <= sWAIT_INNITIAL;
 				end
+        
 				sWAIT_INNITIAL : begin
 					if(card_ready) ns <= sREADER;
 					else ns <= sWAIT_INNITIAL;
@@ -158,13 +196,16 @@ module TopModule_SDCardInitailizer(
 				sREADER : begin
 					ns <= sWAIT_READER;
 				end
+        
 				sWAIT_READER : begin
 					if(reader_busy || !fifo_empty) ns <= sWAIT_READER;
 					else ns <= sFINAL;
 				end
+        
 				sFINAL : begin
 					ns <= sFINAL;
 				end
+        
 				default : begin
 					ns <= sIDLE;
 				end
