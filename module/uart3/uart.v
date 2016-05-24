@@ -19,10 +19,10 @@ module uart_receiver(
   parameter half_baud = 8;
   parameter full_baud = 16;
 
+  wire d_clk;
+
   baudGenerator #(.bitDepth(bitDepth), .adder(adder))
     readBauder(clk, d_clk);
-    
-  wire d_clk;
     
   reg [3:0] c_state, n_state;
   reg [4:0] sub_baud_counter;
@@ -45,7 +45,7 @@ module uart_receiver(
             sub_baud_counter = sub_baud_counter+1;
           end
           else if( rx == START_BIT )begin
-            sub_baud_counter = = 5'b0_0001;
+            sub_baud_counter = 5'b0_0001;
           end
         end
         sDataRead : begin
